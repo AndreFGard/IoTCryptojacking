@@ -1,7 +1,7 @@
+from __future__ import annotations
 import logging
 import pathlib
 from timeit import default_timer as timer
-
 import pandas as pd
 
 from iotcryptojacking.dataset import load_dataset
@@ -14,299 +14,89 @@ logging.basicConfig(
 )
 
 
+def _run_block(
+    name: str,
+    m_list: list[pd.DataFrame],
+    b_list: list[pd.DataFrame],
+    folder: pathlib.Path,
+    template: pd.DataFrame,
+    oversample: bool = False,
+) -> None:
+    """Concatenate, process, and save results for an experiment block."""
+    df_m, df_b = pd.concat(m_list), pd.concat(b_list)
+    if oversample:
+        df_m = df_m.sample(len(df_b), replace=True)
+
+    print(f"\n--- {name} ---")
+    print(f"malicious: {len(df_m)}, benign: {len(df_b)}")
+    print(f"{df_m.isna().any(axis=1).sum()} NAN in malicious!")
+    print(f"{df_b.isna().any(axis=1).sum()} NAN in benign!")
+
+    df_m, df_b = df_m.dropna(), df_b.dropna()
+
+    start = timer()
+    df_ml, results = run_process(df_m, df_b, template)
+    df_ml.to_csv(folder / f"{name}_df_ml.csv", index=False)
+    results.to_csv(folder / f"{name}_results.csv", index=False)
+
+    logging.info(f"Finished {name}")
+    print(f"took {timer() - start:.2f}s")
+
+
+def run_timely_balanced(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    m: list[pd.DataFrame] = [
+        d[1].iloc[:2832], d[2].iloc[:4680], d[3].iloc[:271], d[4].iloc[:48],
+        d[5].iloc[:69], d[6].iloc[:72], d[7].iloc[:170], d[32].iloc[:175],
+        d[33].iloc[:76], d[34].iloc[:48], d[35].iloc[:1300]
+    ]
+    b: list[pd.DataFrame] = [
+        d[8].iloc[:422784], d[9].iloc[:44376], d[10].iloc[:14784], d[11].iloc[:3576],
+        d[12].iloc[:34728], d[13].iloc[:269400], d[14].iloc[:73], d[15].iloc[:24144],
+        d[16].iloc[:7320], d[17].iloc[:21240], d[18].iloc[:544416], d[19].iloc[:2664],
+        d[20].iloc[:27480], d[21].iloc[:30888], d[22].iloc[:12168], d[23].iloc[:174648]
+    ]
+    _run_block("timely", m, b, folder, template)
+
+
+def run_timely_oversampling(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    m: list[pd.DataFrame] = [d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[32], d[33], d[34], d[35]]
+    b: list[pd.DataFrame] = [d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15], d[16], d[17], d[18], d[19], d[20], d[21], d[22], d[23]]
+    _run_block("timely_oversampling", m, b, folder, template, oversample=True)
+
+
+def run_server_experiment(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    _run_block("server", [d[2], d[7], d[32]], [d[19], d[20], d[21], d[22]], folder, template)
+
+
+def run_laptop_experiment(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    _run_block("laptop", [d[35]], [d[8], d[9], d[10], d[11], d[12]], folder, template)
+
+
+def run_raspberry_experiment(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    m: list[pd.DataFrame] = [d[3], d[4], d[5], d[6], d[33], d[34]]
+    b: list[pd.DataFrame] = [d[13], d[14], d[15], d[16], d[17]]
+    _run_block("raspberry", m, b, folder, template)
+
+
+def run_webos_experiment(d: dict[int, pd.DataFrame], folder: pathlib.Path, template: pd.DataFrame) -> None:
+    _run_block("webos", [d[1]], [d[23]], folder, template)
+
+
 def run_experiments() -> None:
     """Run all imbalanced dataset experiments."""
-    base_storage_folder = pathlib.Path("./data/imbalanced_dataset_experiments")
-    base_storage_folder.mkdir(parents=True, exist_ok=True)
+    folder = pathlib.Path("./data/imbalanced_dataset_experiments")
+    folder.mkdir(parents=True, exist_ok=True)
+    template = pd.DataFrame()
 
-    df_results = pd.DataFrame()
-    (
-        df1,
-        df2,
-        df3,
-        df4,
-        df5,
-        df6,
-        df7,
-        df8,
-        df9,
-        df10,
-        df11,
-        df12,
-        df13,
-        df14,
-        df15,
-        df16,
-        df17,
-        df18,
-        df19,
-        df20,
-        df21,
-        df22,
-        df23,
-        df32,
-        df33,
-        df34,
-        df35,
-    ) = load_dataset()
+    keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 32, 33, 34, 35]
+    d: dict[int, pd.DataFrame] = {k: v for k, v in zip(keys, load_dataset())}
 
-    ## Imbalanced: 4 minutes of timely balanced dataset
-
-    df_malicious = pd.DataFrame(
-        pd.concat(
-            [
-                df1[:2832],
-                df2[:4680],
-                df3[:271],
-                df4[:48],
-                df5[:69],
-                df6[:72],
-                df7[:170],
-                df32[:175],
-                df33[:76],
-                df34[:48],
-                df35[:1300],
-            ]
-        )
-    )
-
-    df_benign = pd.DataFrame(
-        pd.concat(
-            [
-                df8[:422784],
-                df9[:44376],
-                df10[:14784],
-                df11[:3576],
-                df12[:34728],
-                df13[:269400],
-                df14[:73],
-                df15[:24144],
-                df16[:7320],
-                df17[:21240],
-                df18[:544416],
-                df19[:2664],
-                df20[:27480],
-                df21[:30888],
-                df22[:12168],
-                df23[:174648],
-            ]
-        )
-    )
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    results_all_combined_imbalanced_df_ml, results_all_combined_imbalanced_df_ml_res = (
-        run_process(df_malicious, df_benign, df_results)
-    )
-    results_all_combined_imbalanced_df_ml_res.to_csv(
-        base_storage_folder / "results_all_combined_imbalanced_df_ml.csv", index=False
-    )
-    results_all_combined_imbalanced_df_ml.to_csv(
-        base_storage_folder / "results_all_combined_imbalanced_ml_res.csv", index=False
-    )
-    logging.info(
-        "Finished extracting and saved timely balanced results_all_combined_imbalanced"
-    )
-
-    end = timer()
-    print(f"Took {end - start}")
-
-    ## Imbalanced: 4 minutes of timely balanced dataset with oversampling
-
-    df_malicious = pd.DataFrame(
-        pd.concat([df1, df2, df3, df4, df5, df6, df7, df32, df33, df34, df35])
-    )
-
-    df_benign = pd.DataFrame(
-        pd.concat(
-            [
-                df8,
-                df9,
-                df10,
-                df11,
-                df12,
-                df13,
-                df14,
-                df15,
-                df16,
-                df17,
-                df18,
-                df19,
-                df20,
-                df21,
-                df22,
-                df23,
-            ]
-        )
-    )
-
-    # sampling
-    df_malicious = df_malicious.sample(len(df_benign), replace=True)
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    _, timely_oversampling_results_all_combined_imbalanced = run_process(
-        df_malicious, df_benign, df_results
-    )
-    timely_oversampling_results_all_combined_imbalanced.to_csv(
-        base_storage_folder / "timely_oversampling_results_all_combined_imbalanced.csv",
-        index=False,
-    )
-    logging.info(
-        "Finished extracting and saving timely_oversampling_results_all_combined_imbalanced"
-    )
-
-    end = timer()
-    print(f"took {end - start}")
-
-    ## Imbalanced: Server
-
-    df_malicious = pd.DataFrame(pd.concat([df2, df7, df32]))
-
-    df_benign = pd.DataFrame(pd.concat([df19, df20, df21, df22]))
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    _, server_results_all_combined_imbalanced = run_process(
-        df_malicious, df_benign, df_results
-    )
-    server_results_all_combined_imbalanced.to_csv(
-        base_storage_folder / "server_results_all_combined_imbalanced.csv", index=False
-    )
-    logging.info("Finished extracting and saving server_results_all_combined_imbalanced")
-    end = timer()
-    print(f"took {end - start}")
-
-    ## Imbalanced: Laptop
-
-    df_malicious = pd.DataFrame(pd.concat([df35]))
-
-    df_benign = pd.DataFrame(pd.concat([df8, df9, df10, df11, df12]))
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    _, laptop_results_all_combined_imbalanced = run_process(
-        df_malicious, df_benign, df_results
-    )
-    laptop_results_all_combined_imbalanced.to_csv(
-        base_storage_folder / "laptop_results_all_combined_imbalanced.csv", index=False
-    )
-    logging.info("Finished extracting and saving laptop_results_all_combined_imbalanced")
-    end = timer()
-    print(f"took {end - start}")
-
-    ## Imbalanced: Raspberry
-
-    df_malicious = pd.DataFrame(pd.concat([df3, df4, df5, df6, df33, df34]))
-
-    df_benign = pd.DataFrame(pd.concat([df13, df14, df15, df16, df17]))
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    _, raspberry_results_all_combined_imbalanced = run_process(
-        df_malicious, df_benign, df_results
-    )
-    raspberry_results_all_combined_imbalanced.to_csv(
-        base_storage_folder / "raspberry_results_all_combined_imbalanced.csv", index=False
-    )
-    logging.info("Finished extracting and saving raspberry_results_all_combined_imbalanced")
-    end = timer()
-    print(f"took {end - start}")
-
-    ## Imbalanced: WebOS
-
-    df_malicious = pd.DataFrame(pd.concat([df1]))
-
-    df_benign = pd.DataFrame(pd.concat([df23]))
-
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    print(f"{len(df_malicious[df_malicious.isna().any(axis=1)])} NAN in malicious!")
-    print(f"{len(df_benign[df_benign.isna().any(axis=1)])} NAN in benign!")
-
-    df_malicious = df_malicious.dropna()
-    df_benign = df_benign.dropna()
-
-    print("After droppping NAN rows: ")
-    print(f"malicious: {len(df_malicious)}")
-    print(f"benign: {len(df_benign)}")
-
-    start = timer()
-
-    _, webos_results_all_combined_imbalanced = run_process(df_malicious, df_benign, df_results)
-    webos_results_all_combined_imbalanced.to_csv(
-        base_storage_folder / "webos_results_all_combined_imbalanced.csv", index=False
-    )
-    logging.info("Finished extracting and saving webos_results_all_combined_imbalanced")
-
-    end = timer()
-    print(f"took {end - start}")
+    run_timely_balanced(d, folder, template)
+    run_timely_oversampling(d, folder, template)
+    run_server_experiment(d, folder, template)
+    run_laptop_experiment(d, folder, template)
+    run_raspberry_experiment(d, folder, template)
+    run_webos_experiment(d, folder, template)
 
 
 if __name__ == "__main__":
