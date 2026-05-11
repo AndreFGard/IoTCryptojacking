@@ -7,7 +7,7 @@ import numpy as np
 import warnings
 from timeit import default_timer as timer
 from scapy.all import *
-from utils import ML_Process, run_process
+from iotcryptojacking.utils import ML_Process, run_process
 
 import logging
 logging.basicConfig(
