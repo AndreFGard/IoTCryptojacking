@@ -11,3 +11,19 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "tsfresh>=0.21.1",
 ]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.39.4",
+    "microsoft-python-type-stubs",
+]
+
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules", "**/__pycache__", ".venv"]
+typeCheckingMode = "basic" # Options: "off", "basic", "standard", "strict"
+pythonVersion = "3.11"
+pythonPlatform = "Linux"
