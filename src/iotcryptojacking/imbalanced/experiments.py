@@ -6,7 +6,7 @@ import logging
 import pandas as pd
 
 from iotcryptojacking.dataset import load_dataset
-from iotcryptojacking.utils import run_process
+from iotcryptojacking.utils import run_process, ML_Process
 
 
 def run_block(
@@ -24,18 +24,31 @@ def run_block(
 
     print(f"\n--- {name} ---")
     print(f"malicious: {len(df_m)}, benign: {len(df_b)}")
-    print(f"{df_m.isna().any(axis=1).sum()} NAN in malicious!")
-    print(f"{df_b.isna().any(axis=1).sum()} NAN in benign!")
+    logging.info(f"--- Starting experiment block: {name} ---")
+    logging.info(f"Initial row counts - Malicious: {len(df_m)}, Benign: {len(df_b)}")
+    
+    m_nans = df_m.isna().any(axis=1).sum()
+    b_nans = df_b.isna().any(axis=1).sum()
+    print(f"{m_nans} NAN in malicious!")
+    print(f"{b_nans} NAN in benign!")
+    if m_nans > 0:
+        logging.warning(f"Found {m_nans} rows with NaN in malicious dataset (will be dropped)")
+    if b_nans > 0:
+        logging.warning(f"Found {b_nans} rows with NaN in benign dataset (will be dropped)")
 
     df_m, df_b = df_m.dropna(), df_b.dropna()
 
     start = timer()
-    df_ml, results = run_process(df_m, df_b, template)
+    df_ml = run_process(df_m, df_b)
     df_ml.to_csv(folder / f"{name}_df_ml.csv", index=False)
+    
+    logging.info("starting ML process")
+    results = ML_Process(df_ml, template)
     results.to_csv(folder / f"{name}_results.csv", index=False)
 
-    logging.info(f"Finished {name}")
-    print(f"took {timer() - start:.2f}s")
+    elapsed = timer() - start
+    logging.info(f"Finished {name} successfully in {elapsed:.2f}s")
+    print(f"took {elapsed:.2f}s")
 
 
 def get_dataset_dict() -> dict[int, pd.DataFrame]:

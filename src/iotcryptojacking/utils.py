@@ -27,9 +27,10 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
         Cross-validation metrics for the evaluated models.
     """
     print("Starting ML process...")
+    logging.info("Starting ML process...")
 
-    X: np.ndarray = df_ml.drop("class", axis=1).to_numpy()
-    y: np.ndarray = df_ml["class"].to_numpy()
+    X: np.ndarray = df_ml.drop("class", axis=1).to_numpy().copy()
+    y: np.ndarray = df_ml["class"].to_numpy().copy()
 
     le = LabelEncoder()
     for i in range(X.shape[1]):
@@ -64,7 +65,10 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
         y_pred: np.ndarray = clf.predict(x_test)
 
         print(f"\nModel: {name}")
-        print(classification_report(y_test, y_pred, target_names=target_names))
+        report = classification_report(y_test, y_pred, target_names=target_names)
+        print(report)
+        logging.info(f"Evaluating Model: {name}")
+        logging.info(f"Classification report for {name}:\n{report}")
 
         this_df = pd.DataFrame(cv_results)
         this_df["model"] = name
@@ -72,21 +76,21 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
 
     final = pd.DataFrame(pd.concat(dfs, ignore_index=True))
     print(final)
+    logging.info(f"Final cross-validation results:\n{final}")
     return final
 
 
 def run_process(
-    a: pd.DataFrame, b: pd.DataFrame, x: pd.DataFrame
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    a: pd.DataFrame, b: pd.DataFrame
+) -> pd.DataFrame:
     """Run feature extraction, selection, and evaluation pipeline.
 
     Args:
         a: Malicious traffic dataset.
         b: Benign traffic dataset.
-        x: Template DataFrame for results.
 
     Returns:
-        Tuple of (selected features DataFrame, evaluation results).
+        Selected features DataFrame.
     """
     logging.info("starting feature extraction")
     df_malicious = a.copy().reset_index(drop=True)
@@ -136,10 +140,8 @@ def run_process(
     feature_names: List[str] = best_features["feature"].tolist()
     df_ml = pd.DataFrame(features[feature_names].copy())
     df_ml["class"] = features["class"].values
-    logging.info("starting ML process")
-    final = ML_Process(df_ml, x)
 
-    return df_ml, final
+    return df_ml
 
 def configure_logging(filename):
     log_dir = pathlib.Path("logs/imbalanced")
