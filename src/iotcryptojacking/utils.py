@@ -146,10 +146,8 @@ def run_process(
 def configure_logging(filename):
     log_dir = pathlib.Path("logs/imbalanced")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_filename = log_dir / f"{pathlib.Path(filename).stem} - {datetime.datetime.now().strftime('%m-%d-%H:%M')}.log"
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%H:%M:%S",
-        filename=str(log_filename)
     )
