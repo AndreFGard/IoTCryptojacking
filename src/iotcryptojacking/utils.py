@@ -88,6 +88,7 @@ def run_process(
     Returns:
         Tuple of (selected features DataFrame, evaluation results).
     """
+    logging.info("starting feature extraction")
     df_malicious = a.copy().reset_index(drop=True)
     df_benign = b.copy().reset_index(drop=True)
 
@@ -124,6 +125,7 @@ def run_process(
     y = features["class"]
 
     # Feature selection
+    logging.info("selecting features")
     relevance_table = cast(pd.DataFrame, calculate_relevance_table(features, y))
     relevance_table = relevance_table[relevance_table["relevant"]]
     relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
@@ -134,7 +136,7 @@ def run_process(
     feature_names: List[str] = best_features["feature"].tolist()
     df_ml = pd.DataFrame(features[feature_names].copy())
     df_ml["class"] = features["class"].values
-
+    logging.info("starting ML process")
     final = ML_Process(df_ml, x)
 
     return df_ml, final

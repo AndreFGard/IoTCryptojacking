@@ -9,7 +9,7 @@ from iotcryptojacking.dataset import load_dataset
 from iotcryptojacking.utils import run_process
 
 
-def _run_block(
+def run_block(
     name: str,
     m_list: list[pd.DataFrame],
     b_list: list[pd.DataFrame],
