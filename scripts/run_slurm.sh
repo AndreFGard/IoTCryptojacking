@@ -1,10 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=iotpaper-job
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=16
 #SBATCH --time=08:00:00
 #SBATCH -p short-simple
 #SBATCH --output=logs/%x-%j.out
-#SBATCH --error=logs/%x-%j.err
 
 # Ensure the logs directory exists
 mkdir -p logs
