@@ -10,21 +10,23 @@ from sklearn import model_selection
 from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder
 from sklearn.svm import SVC
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
 
-def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
+def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimator], OrdinalEncoder]:
     """Train and evaluate ML models using extracted features.
 
     Args:
         df_ml: Feature matrix containing a 'class' target column.
-        x: Template DataFrame for results.
 
     Returns:
-        Cross-validation metrics for the evaluated models.
+        Tuple containing:
+        - Cross-validation metrics for the evaluated models.
+        - Dictionary of trained models.
+        - Fitted OrdinalEncoder.
     """
     print("Starting ML process...")
     logging.info("Starting ML process...")
@@ -32,9 +34,12 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
     X: np.ndarray = df_ml.drop("class", axis=1).to_numpy().copy()
     y: np.ndarray = df_ml["class"].to_numpy().copy()
 
-    le = LabelEncoder()
-    for i in range(X.shape[1]):
-        X[:, i] = le.fit_transform(X[:, i])
+    # Note: The original paper implemented this step using a LabelEncoder in a loop over
+    # columns. We use OrdinalEncoder instead because it produces the exact same transformed
+    # 2D matrix (behaviorally identical), but preserves the learned mappings for ALL columns.
+    # This allows us to save the encoder object and properly use it for future inference.
+    encoder = OrdinalEncoder()
+    X = encoder.fit_transform(X)
 
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=8675309
@@ -52,6 +57,7 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
     target_names: List[str] = ["malignant", "benign"]
 
     dfs: List[pd.DataFrame] = []
+    trained_models: Dict[str, BaseEstimator] = {}
     for name, model in models:
         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
         cv_results = cast(
@@ -61,8 +67,9 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
             ),
         )
 
-        clf = cast(SVC, model).fit(x_train, y_train)
-        y_pred: np.ndarray = clf.predict(x_test)
+        clf = model.fit(x_train, y_train)  # type: ignore
+        trained_models[name] = clf
+        y_pred: np.ndarray = clf.predict(x_test)  # type: ignore
 
         print(f"\nModel: {name}")
         report = classification_report(y_test, y_pred, target_names=target_names)
@@ -77,7 +84,7 @@ def ML_Process(df_ml: pd.DataFrame, x: pd.DataFrame) -> pd.DataFrame:
     final = pd.DataFrame(pd.concat(dfs, ignore_index=True))
     print(final)
     logging.info(f"Final cross-validation results:\n{final}")
-    return final
+    return final, trained_models, encoder
 
 
 def run_process(
