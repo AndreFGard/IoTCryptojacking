@@ -67,6 +67,7 @@ def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimat
             ),
         )
 
+        logging.info("training model")
         clf = model.fit(x_train, y_train)  # type: ignore
         trained_models[name] = clf
         y_pred: np.ndarray = clf.predict(x_test)  # type: ignore
@@ -136,7 +137,7 @@ def run_process(
     y = features["class"]
 
     # Feature selection
-    logging.info("selecting features")
+    logging.info("starting feature selection")
     relevance_table = cast(pd.DataFrame, calculate_relevance_table(features, y))
     relevance_table = relevance_table[relevance_table["relevant"]]
     relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
@@ -148,6 +149,7 @@ def run_process(
     df_ml = pd.DataFrame(features[feature_names].copy())
     df_ml["class"] = features["class"].values
 
+    logging.info(f"finished feature extraction and selection, run_process over")
     return df_ml
 
 def configure_logging(filename):

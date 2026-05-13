@@ -15,3 +15,6 @@ srun --jobid=JOBID --pty bash
 ```
 
 
+## Development
+
+Everything we change from a given notebook when converting it to scripts was justified and documented. The behaviour of the original code was not changed, including not fixing their bugs.

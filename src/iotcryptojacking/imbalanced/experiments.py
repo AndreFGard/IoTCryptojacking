@@ -55,7 +55,6 @@ def run_block(
         logging.info(f"Artifact {results_path.name} exists. Skipping ML_Process...")
         print(f"Artifact {results_path.name} exists. Skipping ML_Process...")
     else:
-        logging.info("starting ML process")
         results, models, encoder = ML_Process(df_ml)
         results.to_csv(results_path, index=False)
         
