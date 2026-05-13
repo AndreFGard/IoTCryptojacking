@@ -2,6 +2,7 @@ from __future__ import annotations
 import pathlib
 from timeit import default_timer as timer
 import logging
+import joblib
 
 import pandas as pd
 
@@ -39,12 +40,28 @@ def run_block(
     df_m, df_b = df_m.dropna(), df_b.dropna()
 
     start = timer()
-    df_ml = run_process(df_m, df_b)
-    df_ml.to_csv(folder / f"{name}_df_ml.csv", index=False)
+    df_ml_path = folder / f"{name}_df_ml.csv"
+    if df_ml_path.exists():
+        logging.info(f"Artifact {df_ml_path.name} exists. Loading df_ml...")
+        print(f"Artifact {df_ml_path.name} exists. Loading df_ml...")
+        df_ml = pd.read_csv(df_ml_path)
+    else:
+        logging.info(f"Running feature extraction for {name}...")
+        df_ml = run_process(df_m, df_b)
+        df_ml.to_csv(df_ml_path, index=False)
     
-    logging.info("starting ML process")
-    results = ML_Process(df_ml, template)
-    results.to_csv(folder / f"{name}_results.csv", index=False)
+    results_path = folder / f"{name}_results.csv"
+    if results_path.exists():
+        logging.info(f"Artifact {results_path.name} exists. Skipping ML_Process...")
+        print(f"Artifact {results_path.name} exists. Skipping ML_Process...")
+    else:
+        logging.info("starting ML process")
+        results, models, encoder = ML_Process(df_ml)
+        results.to_csv(results_path, index=False)
+        
+        for model_name, model in models.items():
+            joblib.dump(model, folder / f"{name}_{model_name}_model.joblib")
+        joblib.dump(encoder, folder / f"{name}_encoder.joblib")
 
     elapsed = timer() - start
     logging.info(f"Finished {name} successfully in {elapsed:.2f}s")
