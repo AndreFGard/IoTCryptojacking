@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=08:00:00
 #SBATCH -p short-simple
-#SBATCH --output=logs/%x-%j.out
+#SBATCH --output=logs/%j.out
 
 # Ensure the logs directory exists
 mkdir -p logs

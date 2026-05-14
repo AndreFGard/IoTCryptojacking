@@ -162,7 +162,7 @@ def run_process(
     return df_ml
 
 def configure_logging(filename):
-    log_dir = pathlib.Path("logs/imbalanced")
+    log_dir = pathlib.Path("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.DEBUG,
