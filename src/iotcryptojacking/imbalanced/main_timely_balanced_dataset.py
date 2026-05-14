@@ -2,7 +2,7 @@ from __future__ import annotations
 from iotcryptojacking import utils
 import pandas as pd
 
-from iotcryptojacking.imbalanced.experiments import run_block, setup_experiment
+from iotcryptojacking.imbalanced.experiments import run_dataset, setup_experiment
 
 def main() -> None:
     utils.configure_logging(__file__)
@@ -19,7 +19,7 @@ def main() -> None:
         d[16].iloc[:7320], d[17].iloc[:21240], d[18].iloc[:544416], d[19].iloc[:2664],
         d[20].iloc[:27480], d[21].iloc[:30888], d[22].iloc[:12168], d[23].iloc[:174648]
     ]
-    run_block("timely", m, b, folder, template)
+    run_dataset("timely", m, b, folder, template)
 
 if __name__ == "__main__":
     main()
