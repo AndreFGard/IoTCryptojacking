@@ -16,11 +16,14 @@ from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
 
-def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimator], OrdinalEncoder]:
+def ML_Process(
+    df_ml: pd.DataFrame, n_jobs: int = 1
+) -> Tuple[pd.DataFrame, Dict[str, BaseEstimator], OrdinalEncoder]:
     """Train and evaluate ML models using extracted features.
 
     Args:
         df_ml: Feature matrix containing a 'class' target column.
+        n_jobs: Number of CPUs to use for cross-validation.
 
     Returns:
         Tuple containing:
@@ -66,7 +69,7 @@ def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimat
         cv_results = cast(
             Dict[str, np.ndarray],
             model_selection.cross_validate(
-                model, x_train, y_train, cv=kfold, scoring=scoring
+                model, x_train, y_train, cv=kfold, scoring=scoring, n_jobs=n_jobs
             ),
         )
 
@@ -92,13 +95,14 @@ def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimat
 
 
 def run_process(
-    a: pd.DataFrame, b: pd.DataFrame
+    a: pd.DataFrame, b: pd.DataFrame, n_jobs: int = 1
 ) -> pd.DataFrame:
     """Run feature extraction, selection, and evaluation pipeline.
 
     Args:
         a: Malicious traffic dataset.
         b: Benign traffic dataset.
+        n_jobs: Number of CPUs to use for feature extraction.
 
     Returns:
         Selected features DataFrame.
@@ -119,6 +123,7 @@ def run_process(
             column_id="id",
             column_sort="Time",
             column_value="Length",
+            n_jobs=n_jobs,
         )
     )
     tf1["class"] = 1
@@ -131,6 +136,7 @@ def run_process(
             column_id="id",
             column_sort="Time",
             column_value="Length",
+            n_jobs=n_jobs,
         )
     )
     tf2["class"] = 0
