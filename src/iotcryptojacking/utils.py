@@ -95,14 +95,13 @@ def ML_Process(
 
 
 def run_process(
-    a: pd.DataFrame, b: pd.DataFrame, n_jobs: int = -1
+    a: pd.DataFrame, b: pd.DataFrame
 ) -> pd.DataFrame:
     """Run feature extraction, selection, and evaluation pipeline.
 
     Args:
         a: Malicious traffic dataset.
         b: Benign traffic dataset.
-        n_jobs: Number of CPUs to use for feature extraction.
 
     Returns:
         Selected features DataFrame.
@@ -123,7 +122,6 @@ def run_process(
             column_id="id",
             column_sort="Time",
             column_value="Length",
-            n_jobs=n_jobs,
         )
     )
     tf1["class"] = 1
@@ -136,7 +134,6 @@ def run_process(
             column_id="id",
             column_sort="Time",
             column_value="Length",
-            n_jobs=n_jobs,
         )
     )
     tf2["class"] = 0
