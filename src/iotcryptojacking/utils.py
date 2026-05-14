@@ -17,7 +17,7 @@ from tsfresh.utilities.dataframe_functions import impute
 
 
 def ML_Process(
-    df_ml: pd.DataFrame, n_jobs: int = 1
+    df_ml: pd.DataFrame, n_jobs: int = -1
 ) -> Tuple[pd.DataFrame, Dict[str, BaseEstimator], OrdinalEncoder]:
     """Train and evaluate ML models using extracted features.
 
@@ -95,7 +95,7 @@ def ML_Process(
 
 
 def run_process(
-    a: pd.DataFrame, b: pd.DataFrame, n_jobs: int = 1
+    a: pd.DataFrame, b: pd.DataFrame, n_jobs: int = -1
 ) -> pd.DataFrame:
     """Run feature extraction, selection, and evaluation pipeline.
 
