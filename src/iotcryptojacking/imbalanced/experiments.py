@@ -49,6 +49,9 @@ def run_block(
         logging.info(f"Running feature extraction for {name}...")
         df_ml = run_process(df_m, df_b)
         df_ml.to_csv(df_ml_path, index=False)
+        # Reload from CSV immediately to ensure the exact same float precision
+        # as when it is loaded later in evaluate.py
+        df_ml = pd.read_csv(df_ml_path)
     
     results_path = folder / f"{name}_results.csv"
     if results_path.exists():

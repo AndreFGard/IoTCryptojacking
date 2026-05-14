@@ -38,8 +38,11 @@ def ML_Process(df_ml: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, BaseEstimat
     # columns. We use OrdinalEncoder instead because it produces the exact same transformed
     # 2D matrix (behaviorally identical), but preserves the learned mappings for ALL columns.
     # This allows us to save the encoder object and properly use it for future inference.
+    # We cast to string before encoding to avoid floating-point precision mismatches 
+    # when loading the features back from CSV for evaluation.
+    X_str = X.astype(str)
     encoder = OrdinalEncoder()
-    X = encoder.fit_transform(X)
+    X = encoder.fit_transform(X_str)
 
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=8675309
@@ -144,9 +147,9 @@ def run_process(
 
     best_features = relevance_table[relevance_table["p_value"] <= 0.05]
 
-    # Select only relevant features
     feature_names: List[str] = best_features["feature"].tolist()
     df_ml = pd.DataFrame(features[feature_names].copy())
+    df_ml = df_ml.round(6)
     df_ml["class"] = features["class"].values
 
     logging.info(f"finished feature extraction and selection, run_process over")
