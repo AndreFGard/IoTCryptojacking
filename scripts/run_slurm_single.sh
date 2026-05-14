@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=iot-single
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=1
 #SBATCH --time=08:00:00
 #SBATCH -p short-simple
 #SBATCH --output=logs/%j.out
