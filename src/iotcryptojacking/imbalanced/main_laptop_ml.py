@@ -1,11 +1,12 @@
 from __future__ import annotations
-from iotcryptojacking import utils
 import pathlib
 
-from iotcryptojacking.imbalanced.experiments import run_ml
+from iotcryptojacking import experiments
+
+from iotcryptojacking.experiments import run_ml
 
 def main() -> None:
-    utils.configure_logging(__file__)
+    experiments.configure_logging(__file__)
     folder = pathlib.Path("./data/imbalanced_dataset_experiments")
     folder.mkdir(parents=True, exist_ok=True)
 

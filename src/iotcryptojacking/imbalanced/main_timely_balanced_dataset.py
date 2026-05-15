@@ -1,11 +1,11 @@
 from __future__ import annotations
-from iotcryptojacking import utils
 import pandas as pd
 
-from iotcryptojacking.imbalanced.experiments import run_dataset, setup_experiment
+from iotcryptojacking.experiments import run_dataset, setup_experiment
+from iotcryptojacking import experiments
 
 def main() -> None:
-    utils.configure_logging(__file__)
+    experiments.configure_logging(__file__)
     d, folder, template = setup_experiment()
 
     m: list[pd.DataFrame] = [
