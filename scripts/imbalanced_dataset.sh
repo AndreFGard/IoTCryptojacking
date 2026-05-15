@@ -4,7 +4,7 @@ mkdir -p logs/imbalanced_dataset
 
 source .venv/bin/activate
 
-for f in src/iotcryptojacking/imbalanced/main_*_dataset.py
+for f in src/paper/imbalanced/main_*_dataset.py
 do
     s="${f/.py/}"
     s="${s//\//.}"

@@ -4,7 +4,7 @@ mkdir -p logs/imbalanced_ml
 
 source .venv/bin/activate
 
-for f in src/iotcryptojacking/imbalanced/main_*_ml.py
+for f in src/paper/imbalanced/main_*_ml.py
 do
     s="${f/.py/}"
     s="${s//\//.}"
