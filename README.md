@@ -2,10 +2,11 @@
 
 ```bash
 bash start.sh
-source .venv
+source .venv/bin/activate
+mkdir logs
 
-
-sbatch scripts/run_slurm.sh ./scripts/imbalanced.sh
+sbatch scripts/run_slum_multi.sh ./scripts/imbalanced_dataset.sh
+sbatch scripts/run_slum_single.sh ./scripts/imbalanced_ml.sh
 ```
 
 and this might be useful too:
