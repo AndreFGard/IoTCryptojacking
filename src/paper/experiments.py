@@ -17,7 +17,7 @@ from sklearn.svm import SVC
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
-from iotcryptojacking.dataset import load_dataset
+from paper.dataset import load_dataset
 
 
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 import pathlib
 
-from iotcryptojacking.experiments import run_ml
-from iotcryptojacking import experiments
+from paper.experiments import run_ml
+from paper import experiments
 
 def main() -> None:
     experiments.configure_logging(__file__)

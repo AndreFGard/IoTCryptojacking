@@ -1,8 +1,8 @@
 from __future__ import annotations
-from iotcryptojacking import experiments
+from paper import experiments
 import pandas as pd
 
-from iotcryptojacking.experiments import run_dataset, setup_experiment
+from paper.experiments import run_dataset, setup_experiment
 
 def main() -> None:
     experiments.configure_logging(__file__)

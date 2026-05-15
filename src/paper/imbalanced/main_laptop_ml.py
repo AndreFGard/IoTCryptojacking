@@ -1,15 +1,16 @@
 from __future__ import annotations
-from iotcryptojacking import experiments
 import pathlib
 
-from iotcryptojacking.experiments import run_ml
+from paper import experiments
+
+from paper.experiments import run_ml
 
 def main() -> None:
     experiments.configure_logging(__file__)
     folder = pathlib.Path("./data/imbalanced_dataset_experiments")
     folder.mkdir(parents=True, exist_ok=True)
 
-    run_ml("timely_oversampling", folder)
+    run_ml("laptop", folder)
 
 if __name__ == "__main__":
     main()
