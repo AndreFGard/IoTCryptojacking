@@ -1,8 +1,8 @@
 from __future__ import annotations
 import pathlib
 
-from paper.experiments import run_ml
-from paper import experiments
+from paper.imbalanced.experiments import run_ml
+from paper.imbalanced import experiments
 
 def main() -> None:
     experiments.configure_logging(__file__)

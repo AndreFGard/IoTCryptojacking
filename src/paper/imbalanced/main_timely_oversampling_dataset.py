@@ -1,8 +1,8 @@
 from __future__ import annotations
-from paper import experiments
+from paper.imbalanced import experiments
 import pandas as pd
 
-from paper.experiments import run_dataset, setup_experiment
+from paper.imbalanced.experiments import run_dataset, setup_experiment
 
 def main() -> None:
     experiments.configure_logging(__file__)
