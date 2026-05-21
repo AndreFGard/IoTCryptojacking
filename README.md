@@ -5,10 +5,10 @@ bash start.sh
 source .venv/bin/activate
 mkdir logs
 
-sbatch scripts/run_slum_multi.sh ./scripts/imbalanced_dataset.sh
-sbatch scripts/run_slum_single.sh ./scripts/imbalanced_ml.sh
+sbatch scripts/run_slurm_multi.sh ./scripts/imbalanced_dataset.sh
+sbatch scripts/run_slurm_single.sh ./scripts/imbalanced_ml.sh
 
-sbatch scripts/run_slum_multi.sh ./scripts/all_scenarios_1.sh
+sbatch scripts/run_slurm_multi.sh ./scripts/all_scenarios_1.sh
 ```
 
 and this might be useful too:
