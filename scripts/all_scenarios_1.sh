@@ -4,7 +4,8 @@ mkdir -p logs/all_scenarios_1
 
 source .venv/bin/activate
 
-for f in src/paper/malicious_vs_benign_1/*.py
+# Run dataset generation then ML entrypoints
+for f in src/paper/malicious_vs_benign_1/main_*.py
 do
     s="${f/.py/}"
     s="${s//\//.}"
