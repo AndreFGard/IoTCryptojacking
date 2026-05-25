@@ -45,7 +45,7 @@ def split_homogeneous_windows(
         group_windows: list[pd.DataFrame] = []
         for start in range(0, n_rows - window_size + 1, step):
             window = group.iloc[start : start + window_size].copy()
-            window["interarrival"] -= window["interarrival"].iloc[-1]
+            window["interarrival"] = window["interarrival"].diff().fillna(0.0)
             group_windows.append(window)
 
         n_windows = len(group_windows)
@@ -58,11 +58,11 @@ def split_homogeneous_windows(
         if n_test > 1:
             test_windows.extend(group_windows[n_train + 1 : n_train + n_test])
 
-        logging.info(f"windows of activity '{activity}': split into {max(0, n_train - 1)}" 
-                        "train and {max(0, n_test - 1)} test windows")
+        logging.info(f"windows of activity '{activity}': split into {max(0, n_train - 1)} "
+                     f"train and {max(0, n_test - 1)} test windows")
 
     logging.info(f"Window splitting complete. Total train windows: {len(train_windows)}, "
-                        "Total test windows: {len(test_windows)}")
+                 f"Total test windows: {len(test_windows)}")
     return train_windows, test_windows
 
 

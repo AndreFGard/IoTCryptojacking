@@ -21,7 +21,7 @@ def _load_file_pair(ingoing: pathlib.Path, outgoing: pathlib.Path) -> pd.DataFra
 
     dfo = pd.read_csv(outgoing, sep=r"\s+", header=None, names=["interarrival", "size"])
     dfo["direction"] = "outgoing"
-    return pd.concat([df, dfo])
+    return pd.concat([df, dfo]).sort_values("interarrival").reset_index(drop=True)
 
 
 def _load_dir(dir: pathlib.Path, vpns: list[str] = ["expressvpn", "novpn", "nordvpn"]) -> Iterator[pd.DataFrame]:
@@ -56,10 +56,10 @@ def _activity_loader(dir: pathlib.Path, activity: str) -> pd.DataFrame:
     else:
         dfs = _load_dir(dir)
 
-    bigdf = next(dfs).sort_values("interarrival")
+    bigdf = next(dfs)
     for df in dfs:
         df["interarrival"] += bigdf.iloc[-1]["interarrival"]
-        bigdf = pd.concat([bigdf, df])
+        bigdf = pd.concat([bigdf, df], ignore_index=True)
 
     bigdf["activity"] = activity
     return bigdf
