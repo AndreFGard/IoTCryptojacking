@@ -1,8 +1,10 @@
 import pandas as pd
+import pycatch22
 from sklearn import compose, preprocessing
 
 
 def encode(df: pd.DataFrame) -> pd.DataFrame:
+    """Encodes categorical columns (direction, vpn, activity) using ColumnTransformer."""
     categorical_cols = ["direction", "vpn", "activity"]
     cols_to_encode = [c for c in categorical_cols if c in df.columns]
     if not cols_to_encode:
@@ -15,7 +17,7 @@ def encode(df: pd.DataFrame) -> pd.DataFrame:
     encoded_data = ct.fit_transform(df)
     new_cols = cols_to_encode + [c for c in df.columns if c not in cols_to_encode]
     
-    return pd.DataFrame(encoded_data, columns=new_cols, index=df.index)[list(df.columns)] #type:ignore
+    return pd.DataFrame(encoded_data, columns=new_cols, index=df.index)[list(df.columns)]  # type:ignore
 
 
 def split_homogeneous_windows(
@@ -37,7 +39,6 @@ def split_homogeneous_windows(
         group_windows: list[pd.DataFrame] = []
         for start in range(0, n_rows - window_size + 1, step):
             window = group.iloc[start : start + window_size].copy()
-
             window["interarrival"] -= window["interarrival"].iloc[-1]
             group_windows.append(window)
 
@@ -45,7 +46,7 @@ def split_homogeneous_windows(
         n_train = int(train_ratio * n_windows)
         n_test = int(test_ratio * n_windows)
 
-        #to avoid data leakage 
+        # to avoid data leakage 
         if n_train > 1:
             train_windows.extend(group_windows[: n_train - 1])
         if n_test > 1:
@@ -54,13 +55,40 @@ def split_homogeneous_windows(
     return train_windows, test_windows
 
 
+def extract_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
+    """Extracts catch22 features for time series columns in each window, preserving metadata."""
+    feature_rows = []
+    for window in windows:
+        row_features = {}
+        
+        # preserve metadata columns if they exist
+        for meta_col in ["activity", "vpn"]:
+            if meta_col in window.columns:
+                row_features[meta_col] = window[meta_col].iloc[0]
+
+        # extract catch22 features for numerical columns
+        for col in ["interarrival", "size"]:
+            if col in window.columns:
+                series = window[col].tolist()
+                res = pycatch22.catch22_all(series)
+                for name, value in zip(res["names"], res["values"]):
+                    row_features[f"{col}_{name}"] = value
+
+        feature_rows.append(row_features)
+
+    return pd.DataFrame(feature_rows)
+
+
 def pipeline(
     df: pd.DataFrame,
     window_size: int,
     overlap: int,
     train_ratio: float = 0.7,
     test_ratio: float = 0.2,
-) -> tuple[list[pd.DataFrame], list[pd.DataFrame]]:
-    """Executes the complete preprocessing pipeline on the dataset."""
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Executes the complete preprocessing pipeline on the dataset and extracts catch22 features."""
     encoded_df = encode(df)
-    return split_homogeneous_windows(encoded_df, window_size, overlap, train_ratio, test_ratio)
+    train_windows, test_windows = split_homogeneous_windows(
+        encoded_df, window_size, overlap, train_ratio, test_ratio
+    )
+    return extract_features(train_windows), extract_features(test_windows)
