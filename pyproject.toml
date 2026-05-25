@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.4.4",
     "pandas>=3.0.2",
+    "pycatch22>=0.4.5",
     "scapy>=2.7.0",
     "scikit-learn>=1.8.0",
     "tsfresh>=0.21.1",
