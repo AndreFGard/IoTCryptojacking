@@ -5,6 +5,7 @@ import pathlib
 from dataclasses import dataclass
 from timeit import default_timer as timer
 from typing import Dict, List, Sequence, Tuple
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import classification_report
+from sklearn.exceptions import ConvergenceWarning
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
@@ -179,17 +181,26 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
     dfs: List[pd.DataFrame] = []
     for name, model in models:
         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
-        cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
 
-        clf = model.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
+        try:
+            warnings.filterwarnings("error", category=ConvergenceWarning)
+            cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
 
-        print(name)
-        print(classification_report(y_test, y_pred, target_names=target_names))
+            clf = model.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
 
-        this_df = pd.DataFrame(cv_results)
-        this_df["model"] = name
-        dfs.append(this_df)
+            print(name)
+            print(classification_report(y_test, y_pred, target_names=target_names))
+
+            this_df = pd.DataFrame(cv_results)
+            this_df["model"] = name
+            dfs.append(this_df)
+
+        except ConvergenceWarning as cw:
+            print(f"Aviso de convergência detectado: {cw}")
+        
+        finally:
+            warnings.resetwarnings()
 
     final = pd.concat(dfs, ignore_index=True)
     print(final)
@@ -200,6 +211,12 @@ def run_dataset_stage() -> None:
     dataset_map = load_dataset()
     for s in SCENARIOS:
         folder = _scenario_folder(s)
+        # If the dataset-stage output already exists, skip recomputing it.
+        df_ml = folder / "df_ml.csv"
+        if df_ml.exists():
+            logging.info("Skipping dataset stage for %s (df_ml exists)", s.slug)
+            continue
+
         df_m, df_b = _prepare(s, dataset_map)
         _save(df_m, folder / "malicious.csv")
         _save(df_b, folder / "benign.csv")
