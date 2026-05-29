@@ -10,7 +10,13 @@ import warnings
 import numpy as np
 import pandas as pd
 import tsfresh
+from sklearn.base import clone
 from sklearn import model_selection
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -79,6 +85,62 @@ def _save(df: pd.DataFrame, path: pathlib.Path) -> None:
         logging.info("Skipping existing artifact: %s", path.name)
         return
     df.to_csv(path, index=False)
+
+
+def _roc_auc_for_fold(model, X_valid: np.ndarray, y_valid: np.ndarray) -> float:
+    if hasattr(model, "predict_proba"):
+        scores = model.predict_proba(X_valid)[:, 1]
+    elif hasattr(model, "decision_function"):
+        scores = model.decision_function(X_valid)
+    else:
+        return float("nan")
+
+    try:
+        return roc_auc_score(y_valid, scores)
+    except ValueError:
+        return float("nan")
+
+
+def _evaluate_model_folds(
+    name: str,
+    model,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    kfold,
+) -> pd.DataFrame:
+    fold_rows = []
+    total_folds = kfold.get_n_splits()
+
+    for fold_idx, (train_idx, valid_idx) in enumerate(kfold.split(X_train, y_train), start=1):
+        logging.info("Starting %s fold %d/%d", name, fold_idx, total_folds)
+        print(f"Iniciando {name} / fold {fold_idx} de {total_folds}", flush=True)
+
+        fold_start = timer()
+        fold_model = clone(model)
+        fold_model.fit(X_train[train_idx], y_train[train_idx])
+        y_valid_pred = fold_model.predict(X_train[valid_idx])
+
+        fold_rows.append(
+            {
+                "fit_time": timer() - fold_start,
+                "score_time": 0.0,
+                "test_accuracy": accuracy_score(y_train[valid_idx], y_valid_pred),
+                "test_precision_weighted": precision_score(
+                    y_train[valid_idx], y_valid_pred, average="weighted", zero_division=0
+                ),
+                "test_recall_weighted": recall_score(
+                    y_train[valid_idx], y_valid_pred, average="weighted", zero_division=0
+                ),
+                "test_f1_weighted": f1_score(
+                    y_train[valid_idx], y_valid_pred, average="weighted", zero_division=0
+                ),
+                "test_roc_auc": _roc_auc_for_fold(fold_model, X_train[valid_idx], y_train[valid_idx]),
+            }
+        )
+
+        logging.info("Finished %s fold %d/%d in %.2fs", name, fold_idx, total_folds, timer() - fold_start)
+
+    return pd.DataFrame(fold_rows)
     logging.info("Saved %s", path)
 
 
@@ -188,8 +250,10 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ConvergenceWarning)
-            cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
+            cv_results = _evaluate_model_folds(name, model, X_train, y_train, kfold)
 
+            logging.info("Training %s on the full training split", name)
+            print(f"Treinando {name} no conjunto completo", flush=True)
             clf = model.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
 
