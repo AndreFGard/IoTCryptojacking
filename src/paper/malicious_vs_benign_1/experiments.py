@@ -171,7 +171,7 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.25, random_state=8675309)
 
     models = [
-        ("LogReg", LogisticRegression(max_iter=1000)),
+        ("LogReg", LogisticRegression()),
         ("KNN", KNeighborsClassifier()),
         ("SVM", SVC()),
         ("GNB", GaussianNB()),
@@ -181,7 +181,9 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
     target_names = ["malignant", "benign"]
 
     dfs: List[pd.DataFrame] = []
-    for name, model in models:
+    for idx, (name, model) in enumerate(models, start=1):
+        logging.info("Running model %d/%d: %s", idx, len(models), name)
+        model_start = timer()
         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
 
         with warnings.catch_warnings():
@@ -193,6 +195,7 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
 
         print(name)
         print(classification_report(y_test, y_pred, target_names=target_names))
+        logging.info("Finished model %s in %.2fs", name, timer() - model_start)
 
         this_df = pd.DataFrame(cv_results)
         this_df["model"] = name
@@ -220,18 +223,27 @@ def run_dataset_stage() -> None:
 
 
 def run_ml_stage() -> None:
-    for s in SCENARIOS:
+    total = len(SCENARIOS)
+    stage_start = timer()
+    for idx, s in enumerate(SCENARIOS, start=1):
         folder = _scenario_folder(s)
         df_ml = folder / "df_ml.csv"
         results = folder / "results.csv"
+        logging.info("ML stage %d/%d: %s (%s)", idx, total, s.slug, s.title)
         if not df_ml.exists():
             raise FileNotFoundError(f"{df_ml} not found; run dataset stage first")
         if results.exists():
             logging.info("Skipping existing results: %s", results.name)
             continue
+        load_start = timer()
+        logging.info("Loading %s", df_ml.name)
         df = pd.read_csv(df_ml)
+        logging.info("Loaded %s with shape %s in %.2fs", df_ml.name, df.shape, timer() - load_start)
         res = ML_Process(df)
         _save(res, results)
+        logging.info("Completed ML stage for %s in %.2fs", s.slug, timer() - load_start)
+
+    logging.info("Finished ML stage for all scenarios in %.2fs", timer() - stage_start)
 
 
 def main() -> None:
