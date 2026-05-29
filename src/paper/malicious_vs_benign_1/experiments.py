@@ -23,6 +23,8 @@ from tsfresh.utilities.dataframe_functions import impute
 
 from paper.malicious_vs_benign_1.dataset import load_dataset
 
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
 
 @dataclass(frozen=True)
 class Scenario:
@@ -169,7 +171,7 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.25, random_state=8675309)
 
     models = [
-        ("LogReg", LogisticRegression()),
+        ("LogReg", LogisticRegression(max_iter=1000)),
         ("KNN", KNeighborsClassifier()),
         ("SVM", SVC()),
         ("GNB", GaussianNB()),
@@ -182,25 +184,19 @@ def ML_Process(df_ML: pd.DataFrame) -> pd.DataFrame:
     for name, model in models:
         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
 
-        try:
-            warnings.filterwarnings("error", category=ConvergenceWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ConvergenceWarning)
             cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
 
             clf = model.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
 
-            print(name)
-            print(classification_report(y_test, y_pred, target_names=target_names))
+        print(name)
+        print(classification_report(y_test, y_pred, target_names=target_names))
 
-            this_df = pd.DataFrame(cv_results)
-            this_df["model"] = name
-            dfs.append(this_df)
-
-        except ConvergenceWarning as cw:
-            print(f"Aviso de convergência detectado: {cw}")
-        
-        finally:
-            warnings.resetwarnings()
+        this_df = pd.DataFrame(cv_results)
+        this_df["model"] = name
+        dfs.append(this_df)
 
     final = pd.concat(dfs, ignore_index=True)
     print(final)
