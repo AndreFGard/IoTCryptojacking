@@ -9,6 +9,8 @@ sbatch scripts/run_slurm_multi.sh ./scripts/imbalanced_dataset.sh
 sbatch scripts/run_slurm_single.sh ./scripts/imbalanced_ml.sh
 
 sbatch scripts/run_slurm_multi.sh ./scripts/all_scenarios_1.sh
+bash scripts/all_scenarios_1.sh |& tee logs/all_scenarios_1/run.log
+sbatch scripts/run_slurm_multi.sh ./scripts/all_scenarios_1.sh |& tee logs/all_scenarios_1/run.log
 ```
 
 and this might be useful too:
