@@ -8,16 +8,27 @@ import joblib
 import numpy as np
 import pandas as pd
 import tsfresh
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+
 from sklearn import model_selection
-from sklearn.base import BaseEstimator
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
 from paper.malicious_benign_2.dataset import get_dataset_dict, load_dataset
+from typing import Protocol
+from sklearn.base import BaseEstimator
+
+class SklearnClassifier(Protocol):
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "SklearnClassifier": ...
+    def predict(self, X: np.ndarray) -> np.ndarray: ...
 
 
 def run_dataset(
@@ -31,6 +42,9 @@ def run_dataset(
     df_m, df_b = pd.concat(m_list), pd.concat(b_list)
     if oversample:
         df_m = df_m.sample(len(df_b), replace=True)
+
+    print(f"malicious: {len(df_m)}, benign: {len(df_b)}")
+    logging.info(f"Initial row counts - Malicious: {len(df_m)}, Benign: {len(df_b)}")
 
     print(f"\n--- {name} ---")
     logging.info(f"--- Starting dataset generation: {name} ---")
@@ -55,6 +69,7 @@ def run_dataset(
     elapsed = timer() - start
     logging.info(f"Finished dataset generation for {name} successfully in {elapsed:.2f}s")
     print(f"Dataset generation took {elapsed:.2f}s")
+
 
 
 def run_ml(name: str, folder: pathlib.Path) -> None:
@@ -93,7 +108,7 @@ def setup_experiment() -> tuple[dict[int, pd.DataFrame], pathlib.Path, pd.DataFr
 
 def ML_Process(
     df_ml: pd.DataFrame, n_jobs: int = -1
-) -> Tuple[pd.DataFrame, Dict[str, BaseEstimator], OrdinalEncoder]:
+) -> Tuple[pd.DataFrame, Dict[str, SklearnClassifier], OrdinalEncoder]:
     logging.info("Starting ML process...")
     X = df_ml.drop("class", axis=1).to_numpy().copy()
     y = df_ml["class"].to_numpy().copy()
@@ -107,7 +122,12 @@ def ML_Process(
     )
     y_train = y_train.ravel()
 
-    models: List[Tuple[str, BaseEstimator]] = [("SVM", SVC())]
+    models: List[Tuple[str, SklearnClassifier]] = [
+        ("LogReg", LogisticRegression()),
+        ("KNN", KNeighborsClassifier()),
+        ("SVM", SVC()),
+        ("GNB", GaussianNB()),
+    ]
     scoring = [
         "accuracy",
         "precision_weighted",
@@ -118,16 +138,39 @@ def ML_Process(
     target_names = ["malignant", "benign"]
 
     dfs: List[pd.DataFrame] = []
-    trained_models: Dict[str, BaseEstimator] = {}
+    trained_models: Dict[str, SklearnClassifier] = {}
+
     for name, model in models:
         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
-        cv_results = cast(
-            Dict[str, np.ndarray],
-            model_selection.cross_validate(
-                model, x_train, y_train, cv=kfold, scoring=scoring, n_jobs=n_jobs
-            ),
-        )
-        clf = model.fit(x_train, y_train)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            cv_results = cast(
+                Dict[str, np.ndarray],
+                model_selection.cross_validate(
+                    cast(BaseEstimator, model), x_train, y_train, cv=kfold, scoring=scoring, n_jobs=n_jobs
+                ),
+            )
+        conv_warns = [w for w in caught if issubclass(w.category, ConvergenceWarning)]
+        if conv_warns:
+            logging.warning(
+                f"Model {name}: ConvergenceWarning em {len(conv_warns)} fold(s) "
+                f"durante cross-validation. Resultados podem ser não confiáveis. "
+                f"Considere aumentar max_iter ou normalizar os dados."
+            )
+
+        logging.info(f"training model {name}")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            clf = model.fit(x_train, y_train)
+        conv_warns = [w for w in caught if issubclass(w.category, ConvergenceWarning)]
+        if conv_warns:
+            logging.warning(
+                f"Model {name}: ConvergenceWarning no treino final. "
+                f"O modelo pode estar subtreinado."
+            )
+
         trained_models[name] = clf
         y_pred = clf.predict(x_test)
 
@@ -141,6 +184,8 @@ def ML_Process(
         dfs.append(this_df)
 
     final = pd.DataFrame(pd.concat(dfs, ignore_index=True))
+    print(final)
+    logging.info(f"Final cross-validation results:\n{final}")
     return final, trained_models, encoder
 
 
@@ -186,8 +231,9 @@ def run_process(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
 
     feature_names = best_features["feature"].tolist()
     df_ml = pd.DataFrame(features[feature_names].copy())
-    df_ml["class"] = features["class"].values
     df_ml = df_ml.round(6)
+    df_ml["class"] = features["class"].values
+    
 
     logging.info("Finished feature extraction and selection")
     return df_ml

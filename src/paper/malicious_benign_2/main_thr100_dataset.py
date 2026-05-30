@@ -8,9 +8,9 @@ def main() -> None:
     experiments.configure_logging(__file__)
     d, folder, template = setup_experiment()
 
-    m: list[pd.DataFrame] = [d[2], d[7], d[32]]
-    b: list[pd.DataFrame] = [d[8], d[18], d[20], d[21]]
-    run_dataset("server_s1", m, b, folder, template)
+    m: list[pd.DataFrame] = [d[1], d[2], d[4], d[5], d[6], d[7], d[35]]
+    b: list[pd.DataFrame] = [d[9], d[10], d[11], d[12], d[14], d[16], d[17], d[18], d[19], d[20], d[21], d[22], d[23]]
+    run_dataset("thr_100_s2", m, b, folder, template)
 
 
 if __name__ == "__main__":
