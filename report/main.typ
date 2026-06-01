@@ -95,49 +95,11 @@ No @alg:cap é apresentado um exemplo de algoritmo.
   caption: [Algoritmo com legenda],
 ) <alg:cap>
 
-= Solução proposta pela equipe para melhorar a solução do artigo de referência (CASO FEITA)
+#include "our_solution.typ"
 
-Apresentar a arquitetura e funcionamento do sistema proposto pelo artigo de referência. Utilizar figuras e/ou algoritmos e/ou equações para descrever o sistema proposto.
+#include "methodology.typ"
 
-- O que espera-se melhorar em relação à solução proposta pelo artigo de referência?
-- Quais os componentes da solução? Quais as suas entradas e saídas? O que eles fazem? Como eles o fazem?
-- Quais métodos ou algoritmos estão sendo propostos ou empregados e por que?
-
-= Metodologia
-
-Descrever os dados e métricas utilizados para validar as soluções propostas e quais os experimentos realizados. Sobre os dados, descrever:
-
-== Dados usados pelo artigo de referência
-
-Quais foram os dados usados para avaliar o sistema proposto? Por que eles foram escolhidos? O que eles representam? Como os conjuntos de treino, validação e teste foram formados? Há quantos dados em cada classe nos conjuntos de treino, validação e teste?
-
-== Novo conjunto de dados escolhido
-
-Quais foram os dados usados para avaliar o sistema proposto? Por que eles foram escolhidos? O que eles representam? Como os conjuntos de treino, validação e teste foram formados? Há quantos dados em cada classe nos conjuntos de treino, validação e teste?
-
-== Métricas de avaliação
-
-Deverá descrever as métricas de avaliação que serão utilizadas para avaliar os resultados obtidos com a reprodução do artigo. Explicar a motivação de uso das métricas e o que se deseja observar com cada uma delas. Apresentar as equações das métricas consideradas.
-
-= Resultados e discussões
-
-Apresentar e analisar os resultados obtidos comparando-os com os resultados de outros trabalhos. Utilizar gráficos e tabelas. Atentar para *não apenas descrever os resultados apresentados*, mas também para *explicá-los e discuti-los*.
-
-== Resultados reprodução do artigo de referência
-
-- Nos dados usados pelo artigo de referência
-- No novo conjunto de dados escolhido
-
-Utilizar gráficos e tabelas. Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
-
-== Resultados proposta de melhoria do artigo de referência (CASO FEITA)
-
-- Nos dados usados pelo artigo de referência
-- No novo conjunto de dados escolhido
-
-Utilizar gráficos e tabelas. Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
-
-Comparar e discutir os resultados da proposta de melhoria com os resultados obtidos com a reprodução do artigo de referência.
+#include "results.typ"
 
 = Conclusões e trabalhos futuros
 
