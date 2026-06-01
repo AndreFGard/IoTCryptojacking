@@ -1,7 +1,12 @@
 import logging
+from typing import Callable, cast
+import numpy as np
 import pandas as pd
 import pycatch22
 from sklearn import compose, preprocessing
+import tsfresh
+from tsfresh.feature_selection.relevance import calculate_relevance_table
+from tsfresh.utilities.dataframe_functions import impute
 
 
 def encode(df: pd.DataFrame) -> pd.DataFrame:
@@ -116,9 +121,110 @@ def pipeline(
     return train_feat, test_feat
 
 
+def extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
+    """Extracts tsfresh features for each window."""
+    if not windows:
+        raise ValueError("No windows provided for tsfresh feature extraction.")
+
+    logging.info(f"starting tsfresh feature extraction for {len(windows)} windows")
+    
+    meta_rows = []
+    for w in windows:
+        meta = {}
+        for col in ["activity", "vpn", "Is_malicious"]:
+            if col in w.columns:
+                meta[col] = w[col].iloc[0]
+        meta_rows.append(meta)
+    meta_df = pd.DataFrame(meta_rows)
+
+    dfs = []
+    for i, w in enumerate(windows):
+        w_df = pd.DataFrame()
+        for col in ["interarrival", "size"]:
+            if col in w.columns:
+                w_df[col] = w[col].values
+        w_df["id"] = i
+        w_df["time"] = range(len(w))
+        dfs.append(w_df)
+        
+    big_df = pd.concat(dfs, ignore_index=True)
+
+    features_df = pd.DataFrame(
+        tsfresh.extract_features(
+            big_df,
+            column_id="id",
+            column_sort="time",
+            impute_function=impute,
+            disable_progressbar=True,
+        )
+    )
+
+    features_df = features_df.reset_index(drop=True)
+    
+    result_df = pd.concat([meta_df, features_df], axis=1)
+    logging.info(f"tsfresh feature extraction complete, shape: {result_df.shape}")
+    return result_df
+
+
+def pipeline_tsfresh(
+    df: pd.DataFrame,
+    window_size: int,
+    overlap: int,
+    train_ratio: float = 0.7,
+    test_ratio: float = 0.2,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Preprocesses data, extracts tsfresh features, and performs relevance-based feature selection."""
+    logging.info("starting pipeline_tsfresh on df")
+    
+    df_copy = df.copy()
+    df_copy["Is_malicious"] = df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+    
+    encoded_df = encode(df_copy)
+    train_windows, test_windows = split_homogeneous_windows(
+        encoded_df, window_size, overlap, train_ratio, test_ratio
+    )
+    
+    train_feat_all = extract_features_tsfresh(train_windows)
+    test_feat_all = extract_features_tsfresh(test_windows)
+    
+    if train_feat_all.empty or test_feat_all.empty:
+        logging.warning("extracted feature dataframes are empty; returning empty dataframes")
+        return train_feat_all, test_feat_all
+
+    logging.info("starting feature selection via relevance table")
+    meta_cols = ["activity", "vpn", "Is_malicious"]
+    feature_cols = [c for c in train_feat_all.columns if c not in meta_cols]
+    
+    X_train = train_feat_all[feature_cols]
+    y_train = train_feat_all["Is_malicious"]
+    
+    relevance_table = cast(pd.DataFrame, calculate_relevance_table(X_train, y_train))
+    relevance_table = relevance_table[relevance_table["relevant"]]
+    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
+    
+    best_features = relevance_table[relevance_table["p_value"] <= 0.05]
+    selected_features = best_features["feature"].tolist()
+    
+    train_feat = train_feat_all[selected_features].copy().round(6)
+    test_feat = test_feat_all[selected_features].copy().round(6)
+    
+    for col in ["activity", "vpn"]:
+        if col in train_feat_all.columns:
+            train_feat[col] = train_feat_all[col].values
+        if col in test_feat_all.columns:
+            test_feat[col] = test_feat_all[col].values
+            
+    logging.info(f"completed pipeline_tsfresh: train features: {train_feat.shape}, test features: {test_feat.shape}")
+    assert isinstance(train_feat, pd.DataFrame) and isinstance(test_feat, pd.DataFrame)
+    return train_feat, test_feat
+
+
 if __name__ == '__main__':
     # Simple self-test log setup
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S")
     from our_dataset import dataset
     dataset = dataset.load_dataset()
-    pipeline(dataset.bitcoin, window_size=10, overlap=5)
+    logging.info("Testing catch22 pipeline...")
+    pipeline(dataset.bitcoin.iloc[:200], window_size=10, overlap=5)
+    logging.info("Testing tsfresh pipeline...")
+    pipeline_tsfresh(dataset.bitcoin.iloc[:200], window_size=10, overlap=5)
