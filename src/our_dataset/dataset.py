@@ -1,6 +1,6 @@
 import pathlib
 from dataclasses import dataclass
-from typing import Iterator
+from typing import ClassVar, Iterator
 import pandas as pd
 
 
@@ -12,6 +12,9 @@ class CryptojackingDataset:
     office: pd.DataFrame
     skype: pd.DataFrame
     youtube: pd.DataFrame
+
+    FEATURES: ClassVar[list[str]] = ["interarrival", "size", "direction"]
+    METADATA: ClassVar[list[str]] = ["activity", "vpn"]
 
 
 def _load_file_pair(ingoing: pathlib.Path, outgoing: pathlib.Path) -> pd.DataFrame:
