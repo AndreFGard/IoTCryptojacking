@@ -1,3 +1,4 @@
+import itertools
 import pathlib
 from dataclasses import dataclass
 from typing import ClassVar, Iterator
@@ -6,15 +7,19 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class CryptojackingDataset:
-    bitcoin: pd.DataFrame
-    bytecoin: pd.DataFrame
-    monero: pd.DataFrame
-    office: pd.DataFrame
-    skype: pd.DataFrame
-    youtube: pd.DataFrame
+    bitcoin_iloc: tuple[int,int]
+    bytecoin_iloc: tuple[int,int]
+    monero_iloc: tuple[int,int]
+    office_iloc: tuple[int,int]
+    skype_iloc: tuple[int,int]
+    youtube_iloc: tuple[int,int]
+    df:pd.DataFrame
 
     FEATURES: ClassVar[list[str]] = ["interarrival", "size", "direction"]
-    METADATA: ClassVar[list[str]] = ["activity", "vpn"]
+    METADATA: ClassVar[list[str]] = ["activity", "vpn", "is_malicious"]
+
+    def __post_init__(self):
+        assert set(self.FEATURES + self.METADATA) == set(list(self.df.columns))
 
 
 def _load_file_pair(ingoing: pathlib.Path, outgoing: pathlib.Path) -> pd.DataFrame:
@@ -70,11 +75,29 @@ def _activity_loader(dir: pathlib.Path, activity: str) -> pd.DataFrame:
 
 def load_dataset(base_path: pathlib.Path = pathlib.Path("Data/Cryptojacking Network Traffic 2021")) -> CryptojackingDataset:
     """Loads all cryptojacking dataset scenarios into a dataclass, each with the keys [interarrival, activity, vpn, direction, size ]"""
+    
+    dfs = [
+        _activity_loader(base_path / "Youtube", "youtube"),
+        _activity_loader(base_path / "Bitcoin", "bitcoin"),
+        _activity_loader(base_path / "Bytecoin", "bytecoin"),
+        _activity_loader(base_path / "Monero", "monero"),
+        _activity_loader(base_path / "Office", "office"),
+        _activity_loader(base_path / "Skype", "skype")
+    ]
+
+    for df in dfs:
+        df["is_malicious"] = df["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+
+    ilocs = [0]
+    for df in dfs:
+        ilocs.append(ilocs[-1] + len(df))
+    
     return CryptojackingDataset(
-        bitcoin=_activity_loader(base_path / "Bitcoin", "bitcoin"),
-        bytecoin=_activity_loader(base_path / "Bytecoin", "bytecoin"),
-        monero=_activity_loader(base_path / "Monero", "monero"),
-        office=_activity_loader(base_path / "Office", "office"),
-        skype=_activity_loader(base_path / "Skype", "skype"),
-        youtube=_activity_loader(base_path / "Youtube", "youtube"),
+        youtube_iloc=(ilocs[0], ilocs[1]),
+        bitcoin_iloc=(ilocs[1], ilocs[2]),
+        bytecoin_iloc=(ilocs[2], ilocs[3]),
+        monero_iloc=(ilocs[3], ilocs[4]),
+        office_iloc=(ilocs[4], ilocs[5]),
+        skype_iloc=(ilocs[5], ilocs[6]),
+        df=pd.concat(dfs).reset_index(drop=True)
     )

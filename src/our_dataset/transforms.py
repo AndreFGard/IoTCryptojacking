@@ -82,7 +82,7 @@ def extract_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     for window in windows:
         row_features = {}
         
-        for meta_col in ["activity", "vpn"]:
+        for meta_col in ["activity", "vpn", "is_malicious"]:
             if meta_col in window.columns:
                 row_features[meta_col] = window[meta_col].iloc[0]
 
@@ -131,7 +131,7 @@ def extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     meta_rows = []
     for w in windows:
         meta = {}
-        for col in ["activity", "vpn", "Is_malicious"]:
+        for col in ["activity", "vpn", "is_malicious"]:
             if col in w.columns:
                 meta[col] = w[col].iloc[0]
         meta_rows.append(meta)
@@ -177,7 +177,7 @@ def pipeline_tsfresh(
     logging.info("starting pipeline_tsfresh on df")
     
     df_copy = df.copy()
-    df_copy["Is_malicious"] = df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+    df_copy["is_malicious"] = df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
     
     encoded_df = encode(df_copy)
     train_windows, test_windows = split_homogeneous_windows(
@@ -192,11 +192,11 @@ def pipeline_tsfresh(
         return train_feat_all, test_feat_all
 
     logging.info("starting feature selection via relevance table")
-    meta_cols = ["activity", "vpn", "Is_malicious"]
+    meta_cols = ["activity", "vpn", "is_malicious"]
     feature_cols = [c for c in train_feat_all.columns if c not in meta_cols]
     
     X_train = train_feat_all[feature_cols]
-    y_train = train_feat_all["Is_malicious"]
+    y_train = train_feat_all["is_malicious"]
     
     relevance_table = cast(pd.DataFrame, calculate_relevance_table(X_train, y_train))
     relevance_table = relevance_table[relevance_table["relevant"]]
@@ -225,6 +225,6 @@ if __name__ == '__main__':
     from our_dataset import dataset
     dataset = dataset.load_dataset()
     logging.info("Testing catch22 pipeline...")
-    pipeline(dataset.bitcoin.iloc[:200], window_size=10, overlap=5)
+    pipeline(dataset.df.iloc[:200], window_size=10, overlap=5)
     logging.info("Testing tsfresh pipeline...")
-    pipeline_tsfresh(dataset.bitcoin.iloc[:200], window_size=10, overlap=5)
+    pipeline_tsfresh(dataset.df.iloc[:200], window_size=10, overlap=5)
