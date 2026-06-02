@@ -1,6 +1,7 @@
 
 
 ```bash
+git lfs install
 bash start.sh
 source .venv/bin/activate
 mkdir logs
