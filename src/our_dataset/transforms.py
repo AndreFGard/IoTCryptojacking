@@ -9,7 +9,7 @@ from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
 
-def encode(df: pd.DataFrame) -> pd.DataFrame:
+def _encode(df: pd.DataFrame) -> pd.DataFrame:
     categorical_cols = ["direction", "vpn", "activity"]
     cols_to_encode = [c for c in categorical_cols if c in df.columns]
     if not cols_to_encode:
@@ -29,22 +29,28 @@ def encode(df: pd.DataFrame) -> pd.DataFrame:
     return encoded_df # type:ignore
 
 
-def split_homogeneous_windows(
+def _split_windows(
     df: pd.DataFrame,
     window_size: int,
     overlap: int,
     train_ratio: float = 0.7,
+    val_ratio: float = 0.1,
     test_ratio: float = 0.2,
-) -> tuple[list[pd.DataFrame], list[pd.DataFrame]]:
-    """splits windows with homgenous activity"""
+) -> tuple[list[pd.DataFrame], list[pd.DataFrame], list[pd.DataFrame]]:
+    """Splits windows (internally homogenous in activity) into train, val, and test sets
+    """
     train_windows: list[pd.DataFrame] = []
+    val_windows: list[pd.DataFrame] = []
     test_windows: list[pd.DataFrame] = []
     step = window_size - overlap
     if step <= 0:
         raise ValueError("Overlap must be strictly less than window_size.")
 
-    logging.info(f"Starting homogeneous window splitting (window_size={window_size}, overlap={overlap})")
-    
+    logging.info(
+        f"Starting homogeneous window splitting (window_size={window_size},"
+        f" overlap={overlap})"
+    )
+
     for activity, group in df.groupby("activity"):
         n_rows = len(group)
         group_windows: list[pd.DataFrame] = []
@@ -55,23 +61,38 @@ def split_homogeneous_windows(
 
         n_windows = len(group_windows)
         n_train = int(train_ratio * n_windows)
+        n_val = int(val_ratio * n_windows)
         n_test = int(test_ratio * n_windows)
 
-        # to avoid data leakage 
+        # to avoid data leakage, introduce a gap of 2 windows between subsets
         if n_train > 1:
             train_windows.extend(group_windows[: n_train - 1])
+        if n_val > 1:
+            val_windows.extend(
+                group_windows[n_train + 1 : n_train + n_val - 1]
+            )
         if n_test > 1:
-            test_windows.extend(group_windows[n_train + 1 : n_train + n_test])
+            test_windows.extend(
+                group_windows[
+                    n_train + n_val + 1 : n_train + n_val + n_test
+                ]
+            )
 
-        logging.info(f"windows of activity '{activity}': split into {max(0, n_train - 1)} "
-                     f"train and {max(0, n_test - 1)} test windows")
+        logging.info(
+            f"windows of activity '{activity}': split into"
+            f" {max(0, n_train - 1)} train, {max(0, n_val - 1)} val, and"
+            f" {max(0, n_test - 1)} test windows"
+        )
 
-    logging.info(f"Window splitting complete. Total train windows: {len(train_windows)}, "
-                 f"Total test windows: {len(test_windows)}")
-    return train_windows, test_windows
+    logging.info(
+        "Window splitting complete. Total train windows:"
+        f" {len(train_windows)}, Total val windows: {len(val_windows)},"
+        f" Total test windows: {len(test_windows)}"
+    )
+    return train_windows, val_windows, test_windows
 
 
-def extract_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
+def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     """Extracts catch22 features for time series columns in each window, preserving metadata."""
     if not windows:
         logging.info("No windows provided for catch22 feature extraction.")
@@ -100,28 +121,8 @@ def extract_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     return feature_df
 
 
-def pipeline(
-    df: pd.DataFrame,
-    window_size: int,
-    overlap: int,
-    train_ratio: float = 0.7,
-    test_ratio: float = 0.2,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Executes the complete preprocessing pipeline on the dataset and extracts catch22 features."""
-    logging.info("starting pipeline on df")
-    encoded_df = encode(df)
-    train_windows, test_windows = split_homogeneous_windows(
-        encoded_df, window_size, overlap, train_ratio, test_ratio
-    )
-    
-    train_feat = extract_features(train_windows)
-    test_feat = extract_features(test_windows)
-    
-    logging.info(f"completed pipeline: train features: {train_feat.shape}, test features: {test_feat.shape}")
-    return train_feat, test_feat
 
-
-def extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
+def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     """Extracts tsfresh features for each window."""
     if not windows:
         raise ValueError("No windows provided for tsfresh feature extraction.")
@@ -166,30 +167,60 @@ def extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     return result_df
 
 
+def pipeline_pycatch22(
+    df: pd.DataFrame,
+    window_size: int,
+    overlap: int,
+    train_ratio: float = 0.7,
+    val_ratio: float = 0.1,
+    test_ratio: float = 0.2,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    logging.info("starting pipeline on df")
+    encoded_df = _encode(df)
+    train_windows, val_windows, test_windows = _split_windows(
+        encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
+    )
+    
+    train_feat = _extract_catch22_features(train_windows)
+    val_feat = _extract_catch22_features(val_windows)
+    test_feat = _extract_catch22_features(test_windows)
+    
+    logging.info(
+        f"completed pipeline: train features: {train_feat.shape}, "
+        f"val features: {val_feat.shape}, test features: {test_feat.shape}"
+    )
+    return train_feat, val_feat, test_feat
+
+
 def pipeline_tsfresh(
     df: pd.DataFrame,
     window_size: int,
     overlap: int,
     train_ratio: float = 0.7,
+    val_ratio: float = 0.1,
     test_ratio: float = 0.2,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Preprocesses data, extracts tsfresh features, and performs relevance-based feature selection."""
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     logging.info("starting pipeline_tsfresh on df")
     
     df_copy = df.copy()
-    df_copy["is_malicious"] = df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+    df_copy["is_malicious"] = df_copy["activity"].isin(
+        ["bitcoin", "bytecoin", "monero"]
+    ).astype(int)
     
-    encoded_df = encode(df_copy)
-    train_windows, test_windows = split_homogeneous_windows(
-        encoded_df, window_size, overlap, train_ratio, test_ratio
+    encoded_df = _encode(df_copy)
+    train_windows, val_windows, test_windows = _split_windows(
+        encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
     )
     
-    train_feat_all = extract_features_tsfresh(train_windows)
-    test_feat_all = extract_features_tsfresh(test_windows)
+    train_feat_all = _extract_features_tsfresh(train_windows)
+    val_feat_all = _extract_features_tsfresh(val_windows)
+    test_feat_all = _extract_features_tsfresh(test_windows)
     
-    if train_feat_all.empty or test_feat_all.empty:
-        logging.warning("extracted feature dataframes are empty; returning empty dataframes")
-        return train_feat_all, test_feat_all
+    if train_feat_all.empty or val_feat_all.empty or test_feat_all.empty:
+        logging.warning(
+            "one of the extracted feature dataframes is empty; returning empty dataframes"
+        )
+        return train_feat_all, val_feat_all, test_feat_all
 
     logging.info("starting feature selection via relevance table")
     meta_cols = ["activity", "vpn", "is_malicious"]
@@ -198,25 +229,52 @@ def pipeline_tsfresh(
     X_train = train_feat_all[feature_cols]
     y_train = train_feat_all["is_malicious"]
     
-    relevance_table = cast(pd.DataFrame, calculate_relevance_table(X_train, y_train))
+    relevance_table = cast(
+        pd.DataFrame, calculate_relevance_table(X_train, y_train)
+    )
     relevance_table = relevance_table[relevance_table["relevant"]]
-    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
+    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(
+        by="p_value"
+    )
     
     best_features = relevance_table[relevance_table["p_value"] <= 0.05]
     selected_features = best_features["feature"].tolist()
     
     train_feat = train_feat_all[selected_features].copy().round(6)
+    val_feat = val_feat_all[selected_features].copy().round(6)
     test_feat = test_feat_all[selected_features].copy().round(6)
     
     for col in ["activity", "vpn"]:
         if col in train_feat_all.columns:
             train_feat[col] = train_feat_all[col].values
+        if col in val_feat_all.columns:
+            val_feat[col] = val_feat_all[col].values
         if col in test_feat_all.columns:
             test_feat[col] = test_feat_all[col].values
             
-    logging.info(f"completed pipeline_tsfresh: train features: {train_feat.shape}, test features: {test_feat.shape}")
-    assert isinstance(train_feat, pd.DataFrame) and isinstance(test_feat, pd.DataFrame)
-    return train_feat, test_feat
+    logging.info(
+        f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
+        f"val features: {val_feat.shape}, test features: {test_feat.shape}"
+    )
+    assert (
+        isinstance(train_feat, pd.DataFrame)
+        and isinstance(val_feat, pd.DataFrame)
+        and isinstance(test_feat, pd.DataFrame)
+    )
+    return train_feat, val_feat, test_feat
+
+
+def pipeline(
+    df: pd.DataFrame,
+    window_size: int,
+    overlap: int,
+    train_ratio: float = 0.7,
+    val_ratio: float = 0.1,
+    test_ratio: float = 0.2,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    return pipeline_pycatch22(
+        df, window_size, overlap, train_ratio, val_ratio, test_ratio
+    )
 
 
 if __name__ == '__main__':
@@ -225,6 +283,6 @@ if __name__ == '__main__':
     from our_dataset import dataset
     dataset = dataset.load_dataset()
     logging.info("Testing catch22 pipeline...")
-    pipeline(dataset.df.iloc[:200], window_size=10, overlap=5)
+    pipeline_pycatch22(dataset.df.iloc[:200], window_size=10, overlap=5)
     logging.info("Testing tsfresh pipeline...")
     pipeline_tsfresh(dataset.df.iloc[:200], window_size=10, overlap=5)
