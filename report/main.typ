@@ -59,12 +59,12 @@ Na @eq:equacao-da-reta é apresentado um exemplo de equação com a equação de
 
 $ y = a x + b $ <eq:equacao-da-reta>
 
-Na @fig:logo-cin é apresentado um exemplo de figura com a logo do centro de informática.
+//Na @fig:logo-cin é apresentado um exemplo de figura com a logo do centro de informática.
 
-#figure(
-  image("imagens/VC.png", width: 80%),
-  caption: [Logo do centro.],
-) <fig:logo-cin>
+//#figure(
+//  image("imagens/VC.png", width: 80%),
+//  caption: [Logo do centro.],
+//) <fig:logo-cin>
 
 = Sistema proposto pelo artigo de referência
 
@@ -95,11 +95,11 @@ No @alg:cap é apresentado um exemplo de algoritmo.
   caption: [Algoritmo com legenda],
 ) <alg:cap>
 
-#include "our_solution.typ"
+#include "sections/our_solution.typ"
 
-#include "methodology.typ"
+#include "sections/methodology.typ"
 
-#include "results.typ"
+#include "sections/results.typ"
 
 = Conclusões e trabalhos futuros
 
