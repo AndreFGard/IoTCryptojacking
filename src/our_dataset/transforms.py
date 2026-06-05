@@ -220,11 +220,74 @@ def pipeline_tsfresh(
 
 
 if __name__ == '__main__':
-    # Simple self-test log setup
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S")
+    from sklearn.svm import SVC
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.metrics import classification_report
+    from sklearn.impute import SimpleImputer
+    import pathlib
     from our_dataset import dataset
-    dataset = dataset.load_dataset()
-    logging.info("Testing catch22 pipeline...")
-    pipeline(dataset.df.iloc[:200], window_size=10, overlap=5)
-    logging.info("Testing tsfresh pipeline...")
-    pipeline_tsfresh(dataset.df.iloc[:200], window_size=10, overlap=5)
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S")
+
+    logging.info("loading dataset")
+    dataset_path = pathlib.Path("/content/drive/MyDrive/Cryptojacking Network Traffic 2021")
+    #dataset = load_dataset(dataset_path)
+    dataset = load_dataset()
+    #df_subset = dataset.df.groupby("activity").head(5000).reset_index(drop=True)
+    df_subset = dataset.df
+    logging.info("starting feature extraction")
+    scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted', 'roc_auc']
+    train_feat, test_feat = pipeline(df_subset, window_size=10, overlap=5)
+    meta_cols = ["activity", "vpn", "is_malicious"]
+
+    X_train = train_feat.drop(columns=meta_cols)
+    y_train = train_feat["is_malicious"]
+
+    X_test = test_feat.drop(columns=meta_cols)
+    y_test = test_feat["is_malicious"]
+
+    imputer = SimpleImputer(strategy='constant', fill_value=0.0)
+
+    X_train_clean = imputer.fit_transform(X_train)
+    X_test_clean = imputer.transform(X_test)
+
+    param_grid = {
+        'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+        'C': [1, 2],
+        'gamma': ['scale', 'auto']
+    }
+
+    svm_model = SVC(random_state=42)
+
+    grid_search = GridSearchCV(
+        estimator=svm_model,
+        param_grid=param_grid,
+        scoring=scoring,
+        refit='accuracy',
+        cv=5,
+        n_jobs=-1,
+        verbose=2
+    )
+
+    logging.info("starting tuning")
+    grid_search.fit(X_train_clean, y_train)
+    logging.info("finished tuning")
+
+    print("\n" + "="*60)
+    print("Classification report for all enumerations")
+    print("="*60)
+    logging.info("starting to enumerate results")
+    for i, params in enumerate(grid_search.cv_results_['params']):
+        print(f"\ntested: {params}")
+        logging.info(f"testing: {params}")
+        temp_svm = SVC(**params, random_state=42)
+        temp_svm.fit(X_train_clean, y_train)
+        y_pred_temp = temp_svm.predict(X_test_clean)
+
+        print(f"{params}: ")
+        print(classification_report(y_test, y_pred_temp))
+        print("=" * 60)
+
+    logging.info("finished ")
+    print("final model: ")
+    print(grid_search.best_params_)
