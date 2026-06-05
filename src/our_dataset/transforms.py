@@ -167,6 +167,29 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     return result_df
 
 
+def _scale(
+    train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Applies StandardScaler to non-metadata columns of train, val, and test."""
+    feature_cols = [
+        c
+        for c in train.columns
+        if c not in ["activity", "vpn", "is_malicious"]
+    ]
+    if not feature_cols or train.empty:
+        return train, val, test
+    scaler = preprocessing.StandardScaler()
+    train_copy = train.copy()
+    val_copy = val.copy()
+    test_copy = test.copy()
+    train_copy[feature_cols] = scaler.fit_transform(train_copy[feature_cols])
+    if not val_copy.empty:
+        val_copy[feature_cols] = scaler.transform(val_copy[feature_cols])
+    if not test_copy.empty:
+        test_copy[feature_cols] = scaler.transform(test_copy[feature_cols])
+    return train_copy, val_copy, test_copy
+
+
 def pipeline_pycatch22(
     df: pd.DataFrame,
     window_size: int,
@@ -184,6 +207,8 @@ def pipeline_pycatch22(
     train_feat = _extract_catch22_features(train_windows)
     val_feat = _extract_catch22_features(val_windows)
     test_feat = _extract_catch22_features(test_windows)
+    
+    train_feat, val_feat, test_feat = _scale(train_feat, val_feat, test_feat)
     
     logging.info(
         f"completed pipeline: train features: {train_feat.shape}, "
@@ -251,6 +276,8 @@ def pipeline_tsfresh(
             val_feat[col] = val_feat_all[col].values
         if col in test_feat_all.columns:
             test_feat[col] = test_feat_all[col].values
+            
+    train_feat, val_feat, test_feat = _scale(train_feat, val_feat, test_feat)
             
     logging.info(
         f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
