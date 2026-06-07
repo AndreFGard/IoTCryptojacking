@@ -1,0 +1,13 @@
+Dispositivo,Estratégia,Tipo de ataque,Pacotes
+Desktop,Aggressive,Webminepool,234.272
+Raspberry,nenhuma,binary,11.745
+Raspberry,Aggressive,Webminepool,19.643
+Raspberry,Robust,Webminepool,6.406
+Raspberry,Stealthy,Webminepool,9.880
+Raspberry,Aggressive,webmine,12.871
+Raspberry,Robust,webmine,3.519
+Server,nenhuma,binary,1.198.039
+Server,Aggressive,Webminepool,2.539
+Server,Robust,Webminepool,16.744
+WebOS,nenhuma,binary,41.572
+Total,,,1.557.230

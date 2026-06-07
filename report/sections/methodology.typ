@@ -31,34 +31,27 @@
 
   === Dados Maliciosos
   Foram coletados pelos próprios autores, reproduzindo o cenário de uma rede residencial de _IoT_. Então, os dados foram separados entre os tipos de dispositivos, entre ataques binários e baseados em navegador - que foram separados de acordo com o provedor do _script_ de mineração - e estratégia de lucro envolvidos, capturando uma variedade significativa, como se vê em @fig:dist-malicioso. Foi necessário criar este novo _dataset_ devido a falta de outros que abordem Cryptojacking em um ambiente pensado em _IoT_. Como esperado, dispositivos mais fortes produzem mais tráfego, estando mais representados que os mais fracos.
-
-
   #figure(
     grid(
-      columns: 2,
+      columns: 1,
       column-gutter: 1em,
-      table(
-        columns: (1fr, 1.2fr, 1.2fr, 1fr),
-        align: (left, left, left, right),
-        stroke: none,
-        table.hline(y: 0, stroke: 0.5pt),
-        table.header([*Dispositivo*], [*Estratégia*], [*Tipo de ataque*], [*N. pacotes*]),
-        table.hline(y: 1, stroke: 0.5pt),
-        [Desktop], [Aggressive], [Webminepool], [234.272],
-        [Raspberry], [nenhuma], [binary], [11.745],
-        [Raspberry], [Aggressive], [Webminepool], [19.643],
-        [Raspberry], [Robust], [Webminepool], [6.406],
-        [Raspberry], [Stealthy], [Webminepool], [9.880],
-        [Raspberry], [Aggressive], [webmine], [12.871],
-        [Raspberry], [Robust], [webmine], [3.519],
-        [Server], [nenhuma], [binary], [1.198.039],
-        [Server], [Aggressive], [Webminepool], [2.539],
-        [Server], [Robust], [Webminepool], [16.744],
-        [WebOS], [nenhuma], [binary], [41.572],
-        table.hline(y: 12, stroke: 0.5pt),
-      ),
+      {
+        let data = csv("../data/malicious_dist.csv")
+        table(
+          columns: (1fr, 1.2fr, 1.2fr, 1.2fr),
+          align: (left, left, left, right, right),
+          stroke: none,
+          table.hline(y: 0, stroke: 0.5pt),
+          table.header(..data.at(0).map(x => [*#x*])),
+          table.hline(y: 1, stroke: 0.5pt),
+          ..data.slice(1, -1).flatten().map(x => if x == "" { [] } else { x }),
+          table.hline(y: 12, stroke: 0.5pt),
+          ..data.last().map(x => [*#x*]),
+          table.hline(y: 13, stroke: 0.5pt),
+        )
+      },
     ),
-    caption: [N. de pacotes maliciosos por dispositivo, estratégia e tipo de ataque.],
+    caption: [N. de pacotes maliciosos por dispositivo, estratégia e tipo de ataque (original vs. pós-poda por endereço MAC).],
   ) <fig:dist-malicioso>
 
   === Dados benignos
@@ -66,47 +59,48 @@
 
   #figure(
     //image("../imagens/benign_distribution.png", width: 100%),
-    align(center + horizon, table(
-      columns: (1.2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
-      align: (left, right, right, right, right, right),
-      stroke: none,
-      table.hline(y: 0, stroke: 0.5pt),
-      table.header([*Dispositivo*], [*Download*], [*Ocioso*], [*Interativo*], [*Vídeo*], [*Web*]),
-      table.hline(y: 1, stroke: 0.5pt),
-      [Laptop], [442.866], [113.602], [81.681], [29.010], [99.235],
-      [Raspberry], [276.808], [73], [104.241], [57.205], [123.298],
-      [Server], [564.831], [13.459], [123.728], [109.497], [43.713],
-      [WebOS], [-], [-], [-], [177.704], [-],
-      table.hline(y: 5, stroke: 0.5pt),
-    )),
-    caption: [Distribuição de pacotes benignos por dispositivo e atividade.],
+    align(center + horizon, {
+      let data = csv("../data/benign_dist.csv")
+      table(
+        columns: (1.2fr, 1fr, 1fr, 1fr, 1fr, 1fr, 1.2fr),
+        align: (left, right, right, right, right, right, right),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1, -1).flatten().map(x => if x == "-" or x == "" { [-] } else { x }),
+        table.hline(y: 5, stroke: 0.5pt),
+        ..data.last().map(x => [*#x*]),
+        table.hline(y: 6, stroke: 0.5pt),
+      )
+    }),
+    caption: [Distribuição de pacotes benignos (benign-2) por dispositivo e atividade.],
   ) <fig:dist-benigno>
 
   //tabela com a quantidade de dados por classe em treino,teste (lembrar de reforçar que usa cross validation)
 
   === Preprocessamento
   Foram criadas janelas de 10 pacotes e sem sobreposição. Então, uma biblioteca@tsfresh foi usada para extrair centenas de características automaticamente, as quais são selecionadas com base numa tabela de relevância. Depois, as janelas são separadas em treino e teste aleatoriamente, e _Cross-Validation_ é usada quando necessário. No entanto, é importante destacar que, na maioria dos cenários, o cálculo da relevância é feito antes da separação dos dados, o que representa um risco de vazamento de dados.
-  //(tabela com n de pacotes para cada split)
 
-  A @tab:divisao-dados-split apresenta a quantidade de janelas (cada uma contendo 10 pacotes) para cada classe e a divisão correspondente entre os conjuntos de treino/validação e teste para cada um dos experimentos que compõem o Cenário 8.
+  A @tab:divisao-dados-split apresenta a quantidade de pacotes e janelas por classe, bem como o n. de janelas por split. Os dados benignos são consideravelmente maiores, e o desbalanceamento aumenta ainda mais nos estudos em que os tipos e estratégias de ataque são separados.
 
   #figure(
-    table(
-      columns: (1.5fr, 1fr, 1fr, 1fr, 1fr, 1fr),
-      align: (left, right, right, right, right, right),
-      stroke: none,
-      table.hline(y: 0, stroke: 0.5pt),
-      table.header([*Experimento*], [*Malicioso*], [*Benigno*], [*Treino/Val*], [*Teste*], [*Total*]),
-      table.hline(y: 1, stroke: 0.5pt),
-      [Timely], [974], [163.468], [123.331], [41.111], [164.442],
-      [Timely (Oversampled)], [236.095], [236.095], [354.142], [118.048], [472.190],
-      [Laptop vs. Laptop], [23.427], [76.639], [75.049], [25.017], [100.066],
-      [Raspberry vs. Raspberry], [6.406], [56.162], [46.926], [15.642], [62.568],
-      [Server vs. Server], [121.732], [29.039], [113.078], [37.693], [150.771],
-      [WebOS vs. WebOS], [4.157], [17.770], [16.445], [5.482], [21.927],
-      table.hline(y: 7, stroke: 0.5pt),
-    ),
-    caption: [N. de janelas (10 pacotes) por split],
+    {
+      let data = csv("../data/split_dist.csv")
+      table(
+        columns: (auto, auto,auto, auto, auto, auto),
+        align: (left, right, right, right, right, right),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1, -1).flatten().map(x => if x == "" { [] } else { x }),
+        table.hline(y: 3, stroke: 0.5pt),
+        ..data.last().map(x => [*#x*]),
+        table.hline(y: 4, stroke: 0.5pt),
+      )
+    },
+    caption: [Divisão das janelas de dados (10 pacotes por janela) do conjunto de dados completo para treino/validação e teste.],
   ) <tab:divisao-dados-split>
 
 

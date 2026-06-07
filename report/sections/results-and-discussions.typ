@@ -21,7 +21,7 @@
 
   - Nos dados usados pelo artigo de referência
 
-  No cenário 8, os resultados foram efetivamente idênticos aos apresentados no artigo, como se vê em @cenario8
+  No cenário 8, os resultados foram efetivamente idênticos aos apresentados no artigo, como se vê em @tab:cenario8.
 
   #figure(
     table(
@@ -40,7 +40,7 @@
       table.hline(y: 7, stroke: 0.5pt),
     ),
     caption: [Resultados da reprodução *Cenário 8*],
-  ) <cenario8>
+  ) <tab:cenario8>
 
 
 
