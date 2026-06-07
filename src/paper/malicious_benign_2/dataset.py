@@ -93,6 +93,10 @@ def _label_datasets(malicious_dfs: list[pd.DataFrame], benign_dfs: list[pd.DataF
 
 
 def get_dataset_dict() -> dict[int, pd.DataFrame]:
-    keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 32, 33, 34, 35]
+    # ordem deve bater com load_dataset():
+    # maliciosos (df1..df7, df32..df35) depois benignos (df8..df23)
+    keys = [1, 2, 3, 4, 5, 6, 7, 32, 33, 34, 35,
+            8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+            18, 19, 20, 21, 22, 23]
     return {k: v for k, v in zip(keys, load_dataset())}
 
