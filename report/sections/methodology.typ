@@ -64,9 +64,27 @@
   ) <fig:dist-malicioso>
 
   === Dados benignos
-  A princípio, foi usado em @iotcryptojacking um dataset benigno já publicamente disponível. No entanto, os autores criaram ainda outro dataset benigno, garantindo a padronização dos tipos de dispositivo usados, além de uma diversidae grande do tipo de tráfego benigno produzido. Nesse caso, para cada dispositivo, foram simulados usos voltados para _downloads_, uso ocioso, uso interativo, navegação _Web_ e consumo de vídeos, exceto no caso do WebOS, para o qual só foram coletados dados de transmissão de vídeos, de forma consistente com o seu uso real.
+  A princípio, foi usado em @iotcryptojacking um dataset benigno já publicamente disponível. No entanto, os autores criaram ainda outro dataset benigno, garantindo a padronização dos tipos de dispositivo usados, além de uma diversidae grande do tipo de tráfego benigno produzido. Nesse caso, para cada dispositivo, foram simulados usos voltados para _downloads_, uso ocioso, uso interativo, navegação _Web_ e consumo de vídeos, exceto no caso do WebOS, para o qual só foram coletados dados de transmissão de vídeos, de forma consistente com o seu uso real, como apresentado em @fig:dist-benigno.
 
-  //(tabela com n de pacotes (n de linhas) de cada arquivo, com colunas pros 3 componentes, bem como total pra cada componente e total global), bem como figura
+  #figure(
+      //image("../imagens/benign_distribution.png", width: 100%),
+      align(center + horizon, table(
+        columns: (1.2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+        align: (left, right, right, right, right, right),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(
+          [*Dispositivo*], [*Download*], [*Ocioso*], [*Interativo*], [*Vídeo*], [*Web*]
+        ),
+        table.hline(y: 1, stroke: 0.5pt),
+        [Laptop], [442.866], [113.602], [81.681], [29.010], [99.235],
+        [Raspberry], [276.808], [73], [104.241], [57.205], [123.298],
+        [Server], [564.831], [13.459], [123.728], [109.497], [43.713],
+        [WebOS], [-], [-], [-], [177.704], [-],
+        table.hline(y: 5, stroke: 0.5pt),
+      )),
+    caption: [Distribuição de pacotes benignos por dispositivo e atividade.],
+  ) <fig:dist-benigno>
 
 //tabela com a quantidade de dados por classe em treino,teste (lembrar de reforçar que usa cross validation)
 
