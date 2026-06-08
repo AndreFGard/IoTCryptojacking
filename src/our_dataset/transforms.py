@@ -311,7 +311,7 @@ def pipeline_tsfresh(
     val_feat = val_feat_all[selected_features].copy().round(6)
     test_feat = test_feat_all[selected_features].copy().round(6)
     
-    for col in ["activity", "vpn"]:
+    for col in ["activity", "vpn", "is_malicious"]:
         if col in train_feat_all.columns:
             train_feat[col] = train_feat_all[col].values
         if col in val_feat_all.columns:
