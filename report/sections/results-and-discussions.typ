@@ -21,6 +21,30 @@
 
   - Nos dados usados pelo artigo de referência
 
+  A execução do projeto foi dividida em cinco experimentos, no
+
+  === Maliciosos vs. Benignos (1)
+
+  No primeiro conjunto de experimentos, foram usados dados de tráfego de rede de um repositório público para a classe dos benignos, o _dataset_ consiste de diversas atividades de usuário: interativa, transferência de dados em massa, navegação na web, reprodução de vídeo e comportamento ocioso. 
+  
+  Neste experimento foram testados os seguintes cenários:
+
+  - S0: Desenvolvendo um mecanismo de detecção de cryptojacking para IoT
+  - Avaliação com diferentes comportamentos adversários:
+    - S1: Server vs. Desktop vs. IoT
+    - S2: Agressivo vs. Robusto vs. Furtivo
+    - S3: In-browser vs. Binary
+
+  - Modelos adversários baseado na quantidade de dispositivos comprometidos na rede doméstica inteligente:
+    - S4: Totalmente comprometido (Todos)
+    - S5: Parcialmente comprometidos (Laptop + IoT)
+    - S6: Único dispositivo comprometido (IoT)
+    - S7: Dispositivos IoT comprometidos (IoT + IoT)
+
+  === Maliciosos vs. Benignos (2)
+
+  === Dataset desbalanceado
+
   No cenário 8, os resultados foram efetivamente idênticos aos apresentados no artigo, como se vê em @tab:cenario8.
 
   #figure(
@@ -41,6 +65,10 @@
     ),
     caption: [Resultados da reprodução *Cenário 8*],
   ) <tab:cenario8>
+
+  === Transferabilidade
+
+  === Ajuste de Hiperparâmetros
 
 
 
