@@ -6,7 +6,7 @@ def main():
     ds = dataset.load_dataset()
     print("finished loading \nstarting extraction")
     
-    train, val, test = transforms.pipeline_pycatch22(ds.df, 15, 0)
+    train, val, test, _ = transforms.pipeline_pycatch22(ds.df, 15, 0)
     print(train.columns)
     print(train["is_malicious"].describe())
 
