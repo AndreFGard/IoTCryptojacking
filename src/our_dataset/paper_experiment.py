@@ -148,9 +148,8 @@ def main():
     logging.info("Starting experiment runner...")
     ds = dataset.load_dataset()
     # Take a mix of benign and malicious samples so we have both classes for training
-    df_benign = ds.df[ds.df["is_malicious"] == 0].iloc[:2000]
-    df_malicious = ds.df[ds.df["is_malicious"] == 1].iloc[:2000]
-    dataset_df = pd.concat([df_benign, df_malicious])
+    df = ds.df
+    dataset_df = df
     run_svc_tuning()
     logging.info("All experiments finished.")
 
