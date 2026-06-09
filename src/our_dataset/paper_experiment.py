@@ -4,7 +4,7 @@ import time
 import datetime
 import os
 from functools import partial
-from typing import Any, Callable, cast
+from typing import Any, Callable, cast, Literal
 import pandas as pd
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, f1_score
@@ -109,15 +109,96 @@ def run_experiment(
     return model, train, val, test, selected_features, metrics
 
 
+def tune_svc(
+    train: pd.DataFrame,
+    val: pd.DataFrame,
+    test: pd.DataFrame,
+    selected_features: list[str],
+    out_dir: str | pathlib.Path = "data/ours/",
+) -> pd.DataFrame:
+    import itertools
+    out_dir = pathlib.Path(out_dir)
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    C_values = [1, 2]
+    kernels: list[Literal["linear", "poly", "rbf", "sigmoid"]] = ["linear", "poly", "rbf", "sigmoid"]
+    gammas: list[Literal["scale", "auto"]] = ["scale", "auto"]
+
+    train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
+    train_y = train["is_malicious"]
+    val_x = cast(pd.DataFrame, val[selected_features].fillna(0.0))
+    val_y = val["is_malicious"]
+    test_x = cast(pd.DataFrame, test[selected_features].fillna(0.0))
+    test_y = test["is_malicious"]
+
+    results = []
+    logging.info("Starting SVC hyperparameter tuning...")
+
+    for C, kernel, gamma in itertools.product(C_values, kernels, gammas):
+        params = [C, kernel, gamma]
+        comb_name = f"SVC - {' - '.join(map(str, params))}"
+        logging.info(f"Training {comb_name}...")
+
+        model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
+        model.fit(train_x, train_y)
+
+        val_preds = model.predict(val_x)
+        val_f1 = f1_score(val_y, val_preds, average="macro")
+
+        test_preds = model.predict(test_x)
+        test_f1 = f1_score(test_y, test_preds, average="macro")
+
+        results.append({
+            "combination_name": comb_name,
+            "C": C,
+            "kernel": kernel,
+            "gamma": gamma,
+            "val_f1_macro": val_f1,
+            "test_f1_macro": test_f1
+        })
+        logging.info(f"{comb_name} - Val F1 Macro: {val_f1:.4f} | Test F1 Macro: {test_f1:.4f}")
+
+    df_results = pd.DataFrame(results).sort_values("val_f1_macro")
+    out_path = out_dir / "svc_tune_result.csv"
+    df_results.to_csv(out_path, index=False)
+    logging.info(f"Tuning finished. Results saved to {out_path}")
+
+    best_result = max(results, key=lambda x: x["val_f1_macro"])
+    logging.info(f"Best combination based on Validation F1: {best_result['combination_name']} (Val F1: {best_result['val_f1_macro']:.4f})")
+    
+    best_model = SVC(
+        C=cast(Any, best_result["C"]),
+        kernel=cast(Any, best_result["kernel"]),
+        gamma=cast(Any, best_result["gamma"]),
+        random_state=42
+    )
+    best_model.fit(train_x, train_y)
+    best_test_preds = best_model.predict(test_x)
+    
+    report_str = cast(str, classification_report(test_y, best_test_preds))
+    logging.info("\nTest set classification report for the best model:\n" + report_str)
+
+    return df_results
+
+
 def main():
     global dataset_df
     configure_logging()
     logging.info("Starting experiment runner...")
     ds = dataset.load_dataset()
+    
     dataset_df = ds.df
+    dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
+
+        
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
     pipeline_pycatch22 = partial(transforms.pipeline_pycatch22, window_size=10, overlap=0)
-    run_experiment("tsfresh",tsfresh_fn, SVC(), )
+    
+    _, train, val, test, selected_features, _ = run_experiment("tsfresh", tsfresh_fn, SVC())
+    
+    # Run hyperparameter tuning on the dataset splits
+    tune_svc(train, val, test, selected_features)
+    
     logging.info("All experiments finished.")
 
 
