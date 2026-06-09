@@ -11,6 +11,8 @@ from tsfresh.utilities.dataframe_functions import impute
 
 PipelineReturn = tuple[pd.DataFrame, pd.DataFrame,pd.DataFrame, "PreprocessingEstimators"]
 
+CPU_COUNT = 8
+
 
 @dataclass
 class PreprocessingEstimators:
@@ -171,6 +173,7 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
             column_sort="time",
             impute_function=impute,
             disable_progressbar=True,
+            n_jobs=CPU_COUNT,
         )
     )
 
@@ -295,7 +298,7 @@ def pipeline_tsfresh(
     y_train = train_feat_all["is_malicious"]
     
     relevance_table = cast(
-        pd.DataFrame, calculate_relevance_table(X_train, y_train)
+        pd.DataFrame, calculate_relevance_table(X_train, y_train, n_jobs=CPU_COUNT)
     )
     relevance_table = relevance_table[relevance_table["relevant"]]
     relevance_table = cast(pd.DataFrame, relevance_table).sort_values(
