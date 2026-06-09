@@ -11,7 +11,7 @@ from tsfresh.utilities.dataframe_functions import impute
 
 PipelineReturn = tuple[pd.DataFrame, pd.DataFrame,pd.DataFrame, "PreprocessingEstimators"]
 
-CPU_COUNT = 8
+CPU_COUNT = 4
 
 
 @dataclass

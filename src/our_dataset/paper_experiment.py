@@ -99,7 +99,7 @@ def _evaluate_single_svc(C, kernel, gamma, train_x, train_y, val_x, val_y, test_
 
 def run_svc_tuning(
     pipeline_name: str = "tsfresh",
-    pipeline_fn: Callable[[pd.DataFrame], transforms.PipelineReturn] = partial(transforms.pipeline_tsfresh, window_size=10, overlap=5)
+    pipeline_fn: Callable[[pd.DataFrame], transforms.PipelineReturn] = partial(transforms.pipeline_tsfresh, window_size=15, overlap=0)
 ):
     logging.info("--- Starting SVC Hyperparameter Tuning Grid ---")
     c_values = [1, 2]
