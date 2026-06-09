@@ -4,7 +4,7 @@ import time
 import datetime
 import os
 from functools import partial
-from typing import Callable
+from typing import Any, Callable, cast
 import pandas as pd
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, f1_score
@@ -77,119 +77,36 @@ def run_experiment(
             f"Loaded {len(selected_features)} selected features from {features_file}"
         )
 
-    train_x = train[selected_features]
+    train_x = train[selected_features].fillna(0.0)
     train_y = train["is_malicious"]
 
     logging.info(f"Fitting model on train set with shape {train_x.shape}...")
     model.fit(train_x, train_y)
-    logging.info(f"Model fitting complete.")
+    logging.info("Model fitting complete.")
 
-    return model, train, val, test
+    val_x = val[selected_features].fillna(0.0)
+    val_y = val["is_malicious"]
+    test_x = test[selected_features].fillna(0.0)
+    test_y = test["is_malicious"]
 
-
-def _evaluate_single_svc(
-    C, kernel, gamma, train_x, train_y, val_x, val_y, test_x, test_y, model_name
-):
-    model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
-    logging.info(f"Fitting model: {model_name}...")
-    model.fit(train_x, train_y)
-
+    logging.info("Calculating metrics...")
+    train_preds = model.predict(train_x)
     val_preds = model.predict(val_x)
     test_preds = model.predict(test_x)
 
-    val_f1 = f1_score(val_y, val_preds, average="weighted")
-    test_f1 = f1_score(test_y, test_preds, average="weighted")
-
-    logging.info(
-        f"Model {model_name} Results - Val Weighted F1: {val_f1:.4f}, Test Weighted F1: {test_f1:.4f}"
-    )
-    report = classification_report(
-        test_y, test_preds, target_names=["benign", "malicious"]
-    )
-    logging.info(f"Classification Report for {model_name}:\n{report}")
-
-    return {
-        "model_name": model_name,
-        "C": C,
-        "kernel": kernel,
-        "gamma": gamma,
-        "val_f1": val_f1,
-        "test_f1": test_f1,
+    metrics = {
+        "train": cast(dict[str, Any], classification_report(train_y, train_preds, output_dict=True)),
+        "val": cast(dict[str, Any], classification_report(val_y, val_preds, output_dict=True)),
+        "test": cast(dict[str, Any], classification_report(test_y, test_preds, output_dict=True)),
     }
 
-
-def run_svc_tuning(
-    pipeline_fn: Callable[[pd.DataFrame], transforms.PipelineReturn],
-    pipeline_name: str = "tsfresh",
-):
-    logging.info("--- Starting SVC Hyperparameter Tuning Grid ---")
-    c_values = [1, 2][:1]
-    kernels = ["linear", "poly", "rbf", "sigmoid"][:1]
-    gammas = ["scale", "auto"][:1]
-
-    # 1. Warm up cache to avoid race conditions when generating files in parallel
-    dummy_model = SVC(C=1, kernel="linear", random_state=42)
-    run_experiment(name=pipeline_name, pipeline=pipeline_fn, model=dummy_model)
-
-    # 2. Load cached features for parallel processing
-    required_dataset_files = [
-        pathlib.Path("data/ours") / (pipeline_name + suffix)
-        for suffix in ["_train.csv", "_val.csv", "_test.csv"]
-    ]
-    features_file = pathlib.Path("data/ours/") / (
-        pipeline_name + "_selected_features.txt"
+    logging.info(
+        f"Metrics - Train F1: {metrics['train']['macro avg']['f1-score']:.4f} | "
+        f"Val F1: {metrics['val']['macro avg']['f1-score']:.4f} | "
+        f"Test F1: {metrics['test']['macro avg']['f1-score']:.4f}"
     )
 
-    train, val, test = [pd.read_csv(f) for f in required_dataset_files]
-    with open(features_file, "r") as f:
-        selected_features = [line.strip() for line in f if line.strip()]
-
-    val_x = val[selected_features]
-    val_y = val["is_malicious"]
-    test_x = test[selected_features]
-    test_y = test["is_malicious"]
-    train_x = train[selected_features]
-    train_y = train["is_malicious"]
-
-    n_jobs = 1
-    logging.info(f"Using {n_jobs} cores for parallel model evaluation.")
-
-    tasks = []
-    for C in c_values:
-        for kernel in kernels:
-            for gamma in gammas:
-                model_name = f"SVM-{kernel}-{gamma}-{C}"
-                tasks.append(
-                    delayed(_evaluate_single_svc)(
-                        C,
-                        kernel,
-                        gamma,
-                        train_x,
-                        train_y,
-                        val_x,
-                        val_y,
-                        test_x,
-                        test_y,
-                        model_name,
-                    )
-                )
-
-    results = Parallel(n_jobs=n_jobs)(tasks)
-
-    results_df = pd.DataFrame(results).set_index("model_name")
-    logging.info("--- SVC Tuning Complete! Summary: ---")
-    logging.info(f"\n{results_df}")
-
-    # Save the dataframe to data/hour:minute-our_dataset_tune.csv
-    now = datetime.datetime.now()
-    time_str = now.strftime("%H:%M")
-    out_dir = pathlib.Path("data")
-    out_dir.mkdir(exist_ok=True, parents=True)
-    csv_file = out_dir / f"{time_str}-our_dataset_tune.csv"
-    results_df.to_csv(csv_file)
-    logging.info(f"Saved tuning results to {csv_file}")
-
-    return results_df
+    return model, train, val, test, selected_features, metrics
 
 
 def main():
@@ -199,7 +116,8 @@ def main():
     ds = dataset.load_dataset()
     dataset_df = ds.df
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
-    run_svc_tuning(tsfresh_fn)
+    pipeline_pycatch22 = partial(transforms.pipeline_pycatch22, window_size=10, overlap=0)
+    run_experiment("catch22",pipeline_pycatch22, SVC(), )
     logging.info("All experiments finished.")
 
 
