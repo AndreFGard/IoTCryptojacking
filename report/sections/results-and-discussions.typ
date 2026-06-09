@@ -21,7 +21,8 @@
 
   - Nos dados usados pelo artigo de referência
 
-  A execução do projeto foi dividida em cinco experimentos, no
+   A execução do projeto foi dividida em cinco experimentos com classificadores de aprendizado de máquina, dentre eles: _Logistic Regression_ (LogReg), _K-Nearest Neighbors_ (KNN), _Support Vector Machine_ (SVM) e _Gaussian Naive Bayes_ (GNB). Foram utilizados 75% dos dados para treinamento e 25% para teste do classificador, _5-fold cross-validation_ e em todos os modelos foram usados os parâmetros padrão do scikit-learn. Os experimentos foram avaliados usando Acurácia, Precisão, _Recall_, F1 _Score_ e Teste roc.
+
 
   === Maliciosos vs. Benignos (1)
 
@@ -40,6 +41,9 @@
     - S5: Parcialmente comprometidos (Laptop + IoT)
     - S6: Único dispositivo comprometido (IoT)
     - S7: Dispositivos IoT comprometidos (IoT + IoT)
+
+  ==== Cenário 0
+  
 
   === Maliciosos vs. Benignos (2)
 
