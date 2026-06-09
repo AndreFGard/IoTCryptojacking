@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=svc-tuning
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=18
 #SBATCH --time=12:00:00
 #SBATCH -p short-simple
 #SBATCH --output=logs/%j.out
