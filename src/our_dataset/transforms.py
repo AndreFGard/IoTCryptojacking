@@ -73,7 +73,7 @@ def _split_windows(
         f" overlap={overlap})"
     )
 
-    for activity, group in df.groupby("activity"):
+    for (activity,vpn,), group in df.groupby(["activity","vpn"]):
         n_rows = len(group)
         group_windows: list[pd.DataFrame] = []
         for start in range(0, n_rows - window_size + 1, step):
@@ -97,7 +97,7 @@ def _split_windows(
             )
 
         logging.info(
-            f"windows of activity '{activity}': split into"
+            f"windows of activity '{activity}' and vpn {vpn}: split into"
             f" {max(0, n_train - 1)} train, {max(0, n_val - 1)} val, and"
             f" {max(0, n_test - 1)} test windows"
         )
