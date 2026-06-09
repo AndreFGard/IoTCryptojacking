@@ -117,7 +117,7 @@ def main():
     dataset_df = ds.df
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
     pipeline_pycatch22 = partial(transforms.pipeline_pycatch22, window_size=10, overlap=0)
-    run_experiment("catch22",pipeline_pycatch22, SVC(), )
+    run_experiment("tsfresh",tsfresh_fn, SVC(), )
     logging.info("All experiments finished.")
 
 
