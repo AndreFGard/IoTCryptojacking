@@ -21,7 +21,7 @@
 
   - Nos dados usados pelo artigo de referência
 
-  A execução do projeto foi dividida em cinco experimentos, no
+   A execução do projeto foi dividida em cinco experimentos com classificadores de aprendizado de máquina, dentre eles: _Logistic Regression_ (LogReg), _K-Nearest Neighbors_ (KNN), _Support Vector Machine_ (SVM) e _Gaussian Naive Bayes_ (GNB). Foram utilizados 75% dos dados para treinamento e 25% para teste do classificador, _5-fold cross-validation_ e em todos os modelos foram usados os parâmetros padrão do scikit-learn. Os experimentos foram avaliados usando Acurácia, Precisão, _Recall_, F1 _Score_ e Teste roc. Assim como no artigo original, a partir do cenário 1 foi considerado apenas o classificador SVM para apresentação dos resultados.
 
   === Maliciosos vs. Benignos (1)
 
@@ -40,6 +40,70 @@
     - S5: Parcialmente comprometidos (Laptop + IoT)
     - S6: Único dispositivo comprometido (IoT)
     - S7: Dispositivos IoT comprometidos (IoT + IoT)
+
+  ==== Cenário 0 - Todos as configurações combinadas
+  
+  Os resultados obtidos estão na @tab:mal-vs-ben-1-cenario-0, os valores apresentados são as médias das 5 execuções de cada modelo. De forma geral, os resultados estão semelhantes aos encontrados no artigo de referência, com margem aceitável de até 0.20.
+
+  #figure(
+    table(
+      columns: (1.2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Modelo*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [LogReg], [0.97], [0.97], [0.97], [0.97], [0.99],
+      [KNN], [0.98], [0.98], [0.98], [0.98], [0.99],
+      [SVM], [0.98], [0.98], [0.98], [0.98], [0.99],
+      [GNB], [0.95], [0.95], [0.95], [0.95], [0.97],
+      table.hline(y: 5, stroke: 0.5pt),
+    ),
+    caption: [Resultados da reprodução *Cenário 0*],
+  ) <tab:mal-vs-ben-1-cenario-0>
+
+  ==== Cenário 1 - Server vs. Desktop vs. IoT
+
+  #figure(
+    table(
+      columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Dispositivo*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Server], [0.99], [0.99], [0.99], [0.99], [1.00],
+      [Desktop], [0.98], [0.98], [0.98], [0.98], [1.00],
+      [IoT], [0.92], [0.93], [0.92], [0.92], [0.97],
+      table.hline(y: 4, stroke: 0.5pt),
+    ),
+    caption: [Resultados da reprodução *Cenário 1* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-1>
+
+  ==== Cenário 2 - Agressiva (Throttle 100%) vs. Robusta (Throttle 50%) vs. Furtiva (Throttle 10%)
+
+  Throttle é o quanto da CPU está sendo utilizado para a atividade de cryptojacking.
+
+  #figure(
+    table(
+      columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Estratégia*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Agressiva (100%)], [0.98], [0.98], [0.98], [0.98], [1.00],
+      [Robusta (50%)], [0.81], [0.81], [0.81], [0.81], [0.89],
+      [Furtiva (10%)], [0.91], [0.91], [0.91], [0.91], [0.97],
+      table.hline(y: 4, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 2* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-2>
+
+  Nesse cenário, o ataque robusto trouxe resultados diferentes do artigo original que teve acurácia, precisão, recall e f1 score com 0.87 e o teste ROC com 0.94. Um ponto observado nesse caso é uma divergência encontrada no artigo e código dos autores relacionado ao tamanho dos datasets usados, foi mencionado o uso de 27.915 amostras benignas e 26.669 amostras maliciosas, no dataset constam 10.453 amostras benignas e 9.925 maliciosas o que influenciou diretamente nos resultados obtidos.
+
+  ==== Cenário 3 - In-Browser vs. Binary
+  
 
   === Maliciosos vs. Benignos (2)
 
