@@ -1,7 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, cast
+from typing import Any, cast
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import pycatch22
 from sklearn import compose, preprocessing
@@ -68,56 +69,73 @@ def _split_windows(
     train_windows: list[dict[str, pd.Series]] = []
     val_windows: list[dict[str, pd.Series]] = []
     test_windows: list[dict[str, pd.Series]] = []
+    
     step = window_size - overlap
     if step <= 0:
         raise ValueError("Overlap must be strictly less than window_size.")
 
     logging.info(
-        f"Starting homogeneous window splitting (window_size={window_size},"
-        f" overlap={overlap})"
+        f"Starting homogeneous window splitting (window_size={window_size}, overlap={overlap})"
     )
+
+    columns = df.columns.tolist()
 
     for key, group in df.groupby(["activity", "vpn"]):
         activity, vpn = cast(tuple[Any, Any], key)
         n_rows = len(group)
-        group_cols = {col: group[col].reset_index(drop=True) for col in group.columns}
-        group_windows: list[dict[str, pd.Series]] = []
-        for start in range(0, n_rows - window_size + 1, step):
-            window = {
-                col: s.iloc[start : start + window_size]
-                for col, s in group_cols.items()
-            }
-            window["interarrival"] = window["interarrival"].diff().fillna(0.0)
-            group_windows.append(window)
+        
+        if n_rows < window_size:
+            continue
 
-        n_windows = len(group_windows)
-        n_train = int(train_ratio * n_windows)
-        n_val = int(val_ratio * n_windows)
-        n_test = int(test_ratio * n_windows)
+        windowed_cols = {}
+        for col in columns:
+            arr = group[col].to_numpy()
+            windowed_cols[col] = sliding_window_view(arr, window_shape=window_size)[::step]
 
-        # to avoid data leakage, introduce a gap of 2 windows between subsets
-        if n_train > 1:
-            train_windows.extend(group_windows[: n_train - 1])
-        if n_val > 1:
-            val_windows.extend(group_windows[n_train + 1 : n_train + n_val - 1])
-        if n_test > 1:
-            test_windows.extend(
-                group_windows[n_train + n_val + 1 : n_train + n_val + n_test]
-            )
+        if "interarrival" in windowed_cols:
+            interarrival_windows = windowed_cols["interarrival"]
+            diffs = np.diff(interarrival_windows, axis=1)
+            zeros = np.zeros((interarrival_windows.shape[0], 1), dtype=diffs.dtype)
+            windowed_cols["interarrival"] = np.concatenate((zeros, diffs), axis=1)
+
+        num_windows = windowed_cols[columns[0]].shape[0]
+        
+        group_windows = [
+            {col: pd.Series(windowed_cols[col][i], copy=False) for col in columns}
+            for i in range(num_windows)
+        ]
+
+        n_train = int(train_ratio * num_windows)
+        n_val = int(val_ratio * num_windows)
+        n_test = int(test_ratio * num_windows)
+
+        train_end = max(0, n_train - 1)
+        if train_end > 0:
+            train_windows.extend(group_windows[:train_end])
+
+        val_start = n_train + 1
+        val_end = val_start + max(0, n_val - 1)
+        if val_start < num_windows and n_val > 1:
+            val_windows.extend(group_windows[val_start:val_end])
+
+        test_start = n_train + n_val + 1
+        test_end = test_start + max(0, n_test - 1)
+        if test_start < num_windows and n_test > 1:
+            test_windows.extend(group_windows[test_start:test_end])
 
         logging.info(
-            f"windows of activity '{activity}' and vpn {vpn}: split into"
-            f" {max(0, n_train - 1)} train, {max(0, n_val - 1)} val, and"
-            f" {max(0, n_test - 1)} test windows"
+            f"windows of activity '{activity}' and vpn {vpn}: split into "
+            f"{len(group_windows[:train_end])} train, "
+            f"{len(group_windows[val_start:val_end])} val, and "
+            f"{len(group_windows[test_start:test_end])} test windows"
         )
 
     logging.info(
-        "Window splitting complete. Total train windows:"
-        f" {len(train_windows)}, Total val windows: {len(val_windows)},"
-        f" Total test windows: {len(test_windows)}"
+        f"Window splitting complete. Total train windows: {len(train_windows)}, "
+        f"Total val windows: {len(val_windows)}, Total test windows: {len(test_windows)}"
     )
+    
     return train_windows, val_windows, test_windows
-
 
 def _extract_catch22_features(windows: list[dict[str, pd.Series]]) -> pd.DataFrame:
     """Extracts catch22 features for time series columns in each window, preserving metadata."""
