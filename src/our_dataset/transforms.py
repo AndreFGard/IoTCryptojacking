@@ -9,40 +9,47 @@ import tsfresh
 from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
-PipelineReturn = tuple[pd.DataFrame, pd.DataFrame,pd.DataFrame, "PreprocessingEstimators"]
+PipelineReturn = tuple[
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, "PreprocessingEstimators"
+]
 
 CPU_COUNT = 8
 
 
 @dataclass
 class PreprocessingEstimators:
-    encoder: compose.ColumnTransformer 
+    encoder: compose.ColumnTransformer
     scaler: preprocessing.StandardScaler
     selected_features: list[str]
 
 
-
-def _encode(df: pd.DataFrame, encoder=None) -> tuple[pd.DataFrame, compose.ColumnTransformer]:
+def _encode(
+    df: pd.DataFrame, encoder=None
+) -> tuple[pd.DataFrame, compose.ColumnTransformer]:
     categorical_cols = ["direction", "vpn", "activity"]
     cols_to_encode = [c for c in categorical_cols if c in df.columns]
     if not cols_to_encode:
         raise ValueError("no categorical columns to encode.")
 
-    logging.info(f"encoding categorical columns using ColumnTransformer: {cols_to_encode}")
+    logging.info(
+        f"encoding categorical columns using ColumnTransformer: {cols_to_encode}"
+    )
     if encoder is None:
         ct = compose.ColumnTransformer(
             [("cat_encode", preprocessing.OrdinalEncoder(), cols_to_encode)],
-            remainder="passthrough"
+            remainder="passthrough",
         )
         encoded_data = ct.fit_transform(df)
     else:
         ct = encoder
         encoded_data = ct.transform(df)
     new_cols = cols_to_encode + [c for c in df.columns if c not in cols_to_encode]
-    
-    encoded_df = pd.DataFrame(encoded_data, columns=new_cols, index=df.index)[list(df.columns)]  
+
+    encoded_df = pd.DataFrame(encoded_data, columns=new_cols, index=df.index)[
+        list(df.columns)
+    ]
     logging.info("finished encoding")
-    return encoded_df, ct # type:ignore
+    return encoded_df, ct  # type:ignore
 
 
 def _split_windows(
@@ -53,8 +60,7 @@ def _split_windows(
     val_ratio: float = 0.1,
     test_ratio: float = 0.2,
 ) -> tuple[list[pd.DataFrame], list[pd.DataFrame], list[pd.DataFrame]]:
-    """Splits windows (internally homogenous in activity) into train, val, and test sets
-    """
+    """Splits windows (internally homogenous in activity) into train, val, and test sets"""
     train_windows: list[pd.DataFrame] = []
     val_windows: list[pd.DataFrame] = []
     test_windows: list[pd.DataFrame] = []
@@ -84,14 +90,10 @@ def _split_windows(
         if n_train > 1:
             train_windows.extend(group_windows[: n_train - 1])
         if n_val > 1:
-            val_windows.extend(
-                group_windows[n_train + 1 : n_train + n_val - 1]
-            )
+            val_windows.extend(group_windows[n_train + 1 : n_train + n_val - 1])
         if n_test > 1:
             test_windows.extend(
-                group_windows[
-                    n_train + n_val + 1 : n_train + n_val + n_test
-                ]
+                group_windows[n_train + n_val + 1 : n_train + n_val + n_test]
             )
 
         logging.info(
@@ -118,7 +120,7 @@ def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     feature_rows = []
     for window in windows:
         row_features = {}
-        
+
         for meta_col in ["activity", "vpn", "is_malicious"]:
             if meta_col in window.columns:
                 row_features[meta_col] = window[meta_col].iloc[0]
@@ -137,14 +139,13 @@ def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     return feature_df
 
 
-
 def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     """Extracts tsfresh features for each window."""
     if not windows:
         raise ValueError("No windows provided for tsfresh feature extraction.")
 
     logging.info(f"starting tsfresh feature extraction for {len(windows)} windows")
-    
+
     meta_rows = []
     for w in windows:
         meta = {}
@@ -163,7 +164,7 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
         w_df["id"] = i
         w_df["time"] = range(len(w))
         dfs.append(w_df)
-        
+
     big_df = pd.concat(dfs, ignore_index=True)
 
     features_df = pd.DataFrame(
@@ -178,7 +179,7 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     )
 
     features_df = features_df.reset_index(drop=True)
-    
+
     result_df = pd.concat([meta_df, features_df], axis=1)
     logging.info(f"tsfresh feature extraction complete, shape: {result_df.shape}")
     return result_df
@@ -188,10 +189,8 @@ def _scale(
     train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame, scaler=None
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, preprocessing.StandardScaler]:
     """Applies StandardScaler to non-metadata columns of train, val, and test."""
-    feature_cols:list[str] = [
-        c
-        for c in train.columns
-        if c not in ["activity", "vpn", "is_malicious"]
+    feature_cols: list[str] = [
+        c for c in train.columns if c not in ["activity", "vpn", "is_malicious"]
     ]
     if scaler is None:
         scaler = preprocessing.StandardScaler()
@@ -200,7 +199,9 @@ def _scale(
         fit_scaler = False
 
     if not feature_cols or train.empty:
-        raise ValueError(f"No feature_cols ({feature_cols}) or train size insufficient ({len(train)})")
+        raise ValueError(
+            f"No feature_cols ({feature_cols}) or train size insufficient ({len(train)})"
+        )
 
     train_copy = train.copy()
     val_copy = val.copy()
@@ -229,26 +230,22 @@ def pipeline_pycatch22(
     train_windows, val_windows, test_windows = _split_windows(
         encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
     )
-    
+
     train_feat = _extract_catch22_features(train_windows)
     val_feat = _extract_catch22_features(val_windows)
     test_feat = _extract_catch22_features(test_windows)
-    
+
     train_feat, val_feat, test_feat, scaler = _scale(train_feat, val_feat, test_feat)
-    
+
     logging.info(
         f"completed pipeline: train features: {train_feat.shape}, "
         f"val features: {val_feat.shape}, test features: {test_feat.shape}"
     )
     feature_cols = [
-        c
-        for c in train_feat.columns
-        if c not in ["activity", "vpn", "is_malicious"]
+        c for c in train_feat.columns if c not in ["activity", "vpn", "is_malicious"]
     ]
     estimators = PreprocessingEstimators(
-        encoder=ct,
-        scaler=scaler,
-        selected_features=feature_cols
+        encoder=ct, scaler=scaler, selected_features=feature_cols
     )
     return train_feat, val_feat, test_feat, estimators
 
@@ -262,21 +259,21 @@ def pipeline_tsfresh(
     test_ratio: float = 0.2,
 ) -> PipelineReturn:
     logging.info("starting pipeline_tsfresh on df")
-    
+
     df_copy = df.copy()
-    df_copy["is_malicious"] = df_copy["activity"].isin(
-        ["bitcoin", "bytecoin", "monero"]
-    ).astype(int)
-    
+    df_copy["is_malicious"] = (
+        df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+    )
+
     encoded_df, ct = _encode(df_copy)
     train_windows, val_windows, test_windows = _split_windows(
         encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
     )
-    
+
     train_feat_all = _extract_features_tsfresh(train_windows)
     val_feat_all = _extract_features_tsfresh(val_windows)
     test_feat_all = _extract_features_tsfresh(test_windows)
-    
+
     if train_feat_all.empty or val_feat_all.empty or test_feat_all.empty:
         logging.warning(
             "one of the extracted feature dataframes is empty; returning empty dataframes"
@@ -284,36 +281,32 @@ def pipeline_tsfresh(
         scaler = preprocessing.StandardScaler()
         scaler.fit(np.zeros((1, 1)))
         estimators = PreprocessingEstimators(
-            encoder=ct,
-            scaler=scaler,
-            selected_features=[]
+            encoder=ct, scaler=scaler, selected_features=[]
         )
         return train_feat_all, val_feat_all, test_feat_all, estimators
 
     logging.info("starting feature selection via relevance table")
     meta_cols = ["activity", "vpn", "is_malicious"]
     feature_cols = [c for c in train_feat_all.columns if c not in meta_cols]
-    
+
     X_train = train_feat_all[feature_cols]
     y_train = train_feat_all["is_malicious"]
-    
+
     relevance_table = cast(
         pd.DataFrame, calculate_relevance_table(X_train, y_train, n_jobs=CPU_COUNT)
     )
     relevance_table = relevance_table[relevance_table["relevant"]]
-    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(
-        by="p_value"
-    )
-    
+    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
+
     best_features = relevance_table[relevance_table["p_value"] <= 0.05]
     selected_features = best_features["feature"].tolist()
     if not selected_features:
         selected_features = feature_cols
-    
+
     train_feat = train_feat_all[selected_features].copy().round(6)
     val_feat = val_feat_all[selected_features].copy().round(6)
     test_feat = test_feat_all[selected_features].copy().round(6)
-    
+
     for col in ["activity", "vpn", "is_malicious"]:
         if col in train_feat_all.columns:
             train_feat[col] = train_feat_all[col].values
@@ -321,9 +314,9 @@ def pipeline_tsfresh(
             val_feat[col] = val_feat_all[col].values
         if col in test_feat_all.columns:
             test_feat[col] = test_feat_all[col].values
-            
+
     train_feat, val_feat, test_feat, scaler = _scale(train_feat, val_feat, test_feat)
-            
+
     logging.info(
         f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
         f"val features: {val_feat.shape}, test features: {test_feat.shape}"
@@ -334,13 +327,11 @@ def pipeline_tsfresh(
         and isinstance(test_feat, pd.DataFrame)
     )
     estimators = PreprocessingEstimators(
-        encoder=ct,
-        scaler=scaler,
-        selected_features=selected_features
+        encoder=ct, scaler=scaler, selected_features=selected_features
     )
     return train_feat, val_feat, test_feat, estimators
- 
- 
+
+
 def pipeline(
     df: pd.DataFrame,
     window_size: int,
@@ -354,10 +345,15 @@ def pipeline(
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Simple self-test log setup
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%H:%M:%S",
+    )
     from our_dataset import dataset
+
     dataset = dataset.load_dataset()
     logging.info("Testing catch22 pipeline...")
     pipeline_pycatch22(dataset.df.iloc[:200], window_size=10, overlap=5)
