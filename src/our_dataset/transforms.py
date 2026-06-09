@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Callable, cast
+from typing import Any, Callable, cast
 import numpy as np
 import pandas as pd
 import pycatch22
@@ -59,11 +59,15 @@ def _split_windows(
     train_ratio: float = 0.7,
     val_ratio: float = 0.1,
     test_ratio: float = 0.2,
-) -> tuple[list[pd.DataFrame], list[pd.DataFrame], list[pd.DataFrame]]:
+) -> tuple[
+    list[dict[str, pd.Series]],
+    list[dict[str, pd.Series]],
+    list[dict[str, pd.Series]],
+]:
     """Splits windows (internally homogenous in activity) into train, val, and test sets"""
-    train_windows: list[pd.DataFrame] = []
-    val_windows: list[pd.DataFrame] = []
-    test_windows: list[pd.DataFrame] = []
+    train_windows: list[dict[str, pd.Series]] = []
+    val_windows: list[dict[str, pd.Series]] = []
+    test_windows: list[dict[str, pd.Series]] = []
     step = window_size - overlap
     if step <= 0:
         raise ValueError("Overlap must be strictly less than window_size.")
@@ -73,11 +77,16 @@ def _split_windows(
         f" overlap={overlap})"
     )
 
-    for (activity,vpn,), group in df.groupby(["activity","vpn"]):
+    for key, group in df.groupby(["activity", "vpn"]):
+        activity, vpn = cast(tuple[Any, Any], key)
         n_rows = len(group)
-        group_windows: list[pd.DataFrame] = []
+        group_cols = {col: group[col].reset_index(drop=True) for col in group.columns}
+        group_windows: list[dict[str, pd.Series]] = []
         for start in range(0, n_rows - window_size + 1, step):
-            window = group.iloc[start : start + window_size].copy()
+            window = {
+                col: s.iloc[start : start + window_size]
+                for col, s in group_cols.items()
+            }
             window["interarrival"] = window["interarrival"].diff().fillna(0.0)
             group_windows.append(window)
 
@@ -110,7 +119,7 @@ def _split_windows(
     return train_windows, val_windows, test_windows
 
 
-def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
+def _extract_catch22_features(windows: list[dict[str, pd.Series]]) -> pd.DataFrame:
     """Extracts catch22 features for time series columns in each window, preserving metadata."""
     if not windows:
         logging.info("No windows provided for catch22 feature extraction.")
@@ -122,11 +131,11 @@ def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
         row_features = {}
 
         for meta_col in ["activity", "vpn", "is_malicious"]:
-            if meta_col in window.columns:
-                row_features[meta_col] = window[meta_col].iloc[0]
+            if meta_col in window:
+                row_features[meta_col] = window[meta_col].values[0]
 
         for col in ["interarrival", "size"]:
-            if col in window.columns:
+            if col in window:
                 series = window[col].tolist()
                 res = pycatch22.catch22_all(series)
                 for name, value in zip(res["names"], res["values"]):
@@ -139,7 +148,7 @@ def _extract_catch22_features(windows: list[pd.DataFrame]) -> pd.DataFrame:
     return feature_df
 
 
-def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
+def _extract_features_tsfresh(windows: list[dict[str, pd.Series]]) -> pd.DataFrame:
     """Extracts tsfresh features for each window."""
     if not windows:
         raise ValueError("No windows provided for tsfresh feature extraction.")
@@ -150,8 +159,8 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     for w in windows:
         meta = {}
         for col in ["activity", "vpn", "is_malicious"]:
-            if col in w.columns:
-                meta[col] = w[col].iloc[0]
+            if col in w:
+                meta[col] = w[col].values[0]
         meta_rows.append(meta)
     meta_df = pd.DataFrame(meta_rows)
 
@@ -159,10 +168,10 @@ def _extract_features_tsfresh(windows: list[pd.DataFrame]) -> pd.DataFrame:
     for i, w in enumerate(windows):
         w_df = pd.DataFrame()
         for col in ["interarrival", "size"]:
-            if col in w.columns:
+            if col in w:
                 w_df[col] = w[col].values
         w_df["id"] = i
-        w_df["time"] = range(len(w))
+        w_df["time"] = range(len(next(iter(w.values()))))
         dfs.append(w_df)
 
     big_df = pd.concat(dfs, ignore_index=True)
@@ -207,13 +216,13 @@ def _scale(
     val_copy = val.copy()
     test_copy = test.copy()
     if fit_scaler:
-        train_copy[feature_cols] = scaler.fit_transform(train_copy[feature_cols])
+        train_copy[feature_cols] = scaler.fit_transform(cast(pd.DataFrame, train_copy[feature_cols]))
     else:
-        train_copy[feature_cols] = scaler.transform(train_copy[feature_cols])
+        train_copy[feature_cols] = scaler.transform(cast(pd.DataFrame, train_copy[feature_cols]))
     if not val_copy.empty:
-        val_copy[feature_cols] = scaler.transform(val_copy[feature_cols])
+        val_copy[feature_cols] = scaler.transform(cast(pd.DataFrame, val_copy[feature_cols]))
     if not test_copy.empty:
-        test_copy[feature_cols] = scaler.transform(test_copy[feature_cols])
+        test_copy[feature_cols] = scaler.transform(cast(pd.DataFrame, test_copy[feature_cols]))
     return train_copy, val_copy, test_copy, scaler
 
 
@@ -315,7 +324,11 @@ def pipeline_tsfresh(
         if col in test_feat_all.columns:
             test_feat[col] = test_feat_all[col].values
 
-    train_feat, val_feat, test_feat, scaler = _scale(train_feat, val_feat, test_feat)
+    train_feat, val_feat, test_feat, scaler = _scale(
+        cast(pd.DataFrame, train_feat),
+        cast(pd.DataFrame, val_feat),
+        cast(pd.DataFrame, test_feat),
+    )
 
     logging.info(
         f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
