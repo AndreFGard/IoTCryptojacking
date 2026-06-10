@@ -136,6 +136,7 @@ def tune_svc(
         "sigmoid",
     ]
     gammas: list[Literal["scale", "auto"]] = ["scale", "auto"]
+    class_weights = ["balanced", None]
 
     train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
     train_y = train["is_malicious"]
@@ -147,14 +148,16 @@ def tune_svc(
     results = []
     logging.info("Starting SVC hyperparameter tuning...")
 
-    for C, kernel, gamma in itertools.product(C_values, kernels, gammas):
-        params = [C, kernel, gamma]
+    for C, kernel, gamma, class_weight in itertools.product(
+        C_values, kernels, gammas, class_weights
+    ):
+        params = [C, kernel, gamma, class_weight]
         comb_name = f"SVC - {' - '.join(map(str, params))}"
 
         # If kernel is linear, gamma is ignored. To avoid duplicate training,
         # we copy the result of gamma == 'scale' when gamma == 'auto' is processed.
         if kernel == "linear" and gamma == "auto":
-            prev_comb = f"SVC - {C} - linear - scale"
+            prev_comb = f"SVC - {C} - linear - scale - {class_weight}"
             prev_res = next(
                 (r for r in results if r["combination_name"] == prev_comb), None
             )
@@ -167,6 +170,7 @@ def tune_svc(
                         "gamma": gamma,
                         "val_f1_macro": prev_res["val_f1_macro"],
                         "test_f1_macro": prev_res["test_f1_macro"],
+                        "class_weight": class_weight,
                     }
                 )
                 logging.info(
@@ -178,10 +182,21 @@ def tune_svc(
 
         if kernel == "linear":
             model = LinearSVC(
-                C=C, loss="hinge", random_state=42, dual=True, max_iter=10000
+                C=C,
+                loss="hinge",
+                class_weight=class_weight,
+                random_state=42,
+                dual=True,
+                max_iter=10000,
             )
         else:
-            model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
+            model = SVC(
+                C=C,
+                kernel=kernel,
+                gamma=gamma,
+                class_weight=class_weight,
+                random_state=42,
+            )
 
         model.fit(train_x, train_y)
 
@@ -196,6 +211,7 @@ def tune_svc(
             "C": C,
             "kernel": kernel,
             "gamma": gamma,
+            "class_weight": class_weight,
             "val_f1_macro": val_f1,
             "test_f1_macro": test_f1,
         }
@@ -203,7 +219,9 @@ def tune_svc(
         logging.info(f"{comb_name} - {res_d}")
 
     df_results = pd.DataFrame(results).sort_values("val_f1_macro")
-    out_path = out_dir / "svc_tune_result.csv"
+    out_path = (
+        out_dir / f"svc_tune_result_{datetime.datetime.now().strftime('%H-%M')}.csv"
+    )
     df_results.to_csv(out_path, index=False)
     logging.info(f"Tuning finished. Results saved to {out_path}")
 
@@ -217,6 +235,7 @@ def tune_svc(
         best_model = LinearSVC(
             C=cast(Any, best_result["C"]),
             loss="hinge",
+            class_weight=cast(Any, best_result["class_weight"]),
             random_state=42,
             dual=True,
             max_iter=10000,
@@ -226,6 +245,7 @@ def tune_svc(
             C=cast(Any, best_result["C"]),
             kernel=cast(Any, best_result["kernel"]),
             gamma=cast(Any, best_result["gamma"]),
+            class_weight=cast(Any, best_result["class_weight"]),
             random_state=42,
         )
     best_model.fit(train_x, train_y)
