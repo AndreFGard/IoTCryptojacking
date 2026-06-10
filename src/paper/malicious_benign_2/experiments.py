@@ -14,7 +14,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn import model_selection
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -108,14 +108,14 @@ def setup_experiment() -> tuple[dict[int, pd.DataFrame], pathlib.Path, pd.DataFr
 
 def ML_Process(
     df_ml: pd.DataFrame, n_jobs: int = -1
-) -> Tuple[pd.DataFrame, Dict[str, SklearnClassifier], OrdinalEncoder]:
+) -> Tuple[pd.DataFrame, Dict[str, SklearnClassifier], LabelEncoder]:
     logging.info("Starting ML process...")
     X = df_ml.drop("class", axis=1).to_numpy().copy()
     y = df_ml["class"].to_numpy().copy()
 
-    X_str = X.astype(str)
-    encoder = OrdinalEncoder()
-    X = encoder.fit_transform(X_str)
+    encoder = LabelEncoder()
+    for i in range(X.shape[1]):
+        X[:, i] = encoder.fit_transform(X[:, i])
 
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=8675309
