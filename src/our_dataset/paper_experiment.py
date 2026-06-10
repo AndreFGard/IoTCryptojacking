@@ -6,7 +6,7 @@ import os
 from functools import partial
 from typing import Any, Callable, cast, Literal
 import pandas as pd
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics import classification_report, f1_score
 from joblib import Parallel, delayed
 
@@ -137,9 +137,31 @@ def tune_svc(
     for C, kernel, gamma in itertools.product(C_values, kernels, gammas):
         params = [C, kernel, gamma]
         comb_name = f"SVC - {' - '.join(map(str, params))}"
+
+        # If kernel is linear, gamma is ignored. To avoid duplicate training,
+        # we copy the result of gamma == 'scale' when gamma == 'auto' is processed.
+        if kernel == "linear" and gamma == "auto":
+            prev_comb = f"SVC - {C} - linear - scale"
+            prev_res = next((r for r in results if r["combination_name"] == prev_comb), None)
+            if prev_res is not None:
+                results.append({
+                    "combination_name": comb_name,
+                    "C": C,
+                    "kernel": kernel,
+                    "gamma": gamma,
+                    "val_f1_macro": prev_res["val_f1_macro"],
+                    "test_f1_macro": prev_res["test_f1_macro"]
+                })
+                logging.info(f"{comb_name} - Val F1 Macro: {prev_res['val_f1_macro']:.4f} | Test F1 Macro: {prev_res['test_f1_macro']:.4f} (copied from scale)")
+                continue
+
         logging.info(f"Training {comb_name}...")
 
-        model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
+        if kernel == "linear":
+            model = LinearSVC(C=C, loss="hinge", random_state=42, dual=True, max_iter=10000)
+        else:
+            model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
+
         model.fit(train_x, train_y)
 
         val_preds = model.predict(val_x)
@@ -163,15 +185,19 @@ def tune_svc(
     df_results.to_csv(out_path, index=False)
     logging.info(f"Tuning finished. Results saved to {out_path}")
 
+    # Output detailed classification report on test set for the best model based on validation F1 score
     best_result = max(results, key=lambda x: x["val_f1_macro"])
     logging.info(f"Best combination based on Validation F1: {best_result['combination_name']} (Val F1: {best_result['val_f1_macro']:.4f})")
     
-    best_model = SVC(
-        C=cast(Any, best_result["C"]),
-        kernel=cast(Any, best_result["kernel"]),
-        gamma=cast(Any, best_result["gamma"]),
-        random_state=42
-    )
+    if best_result["kernel"] == "linear":
+        best_model = LinearSVC(C=cast(Any, best_result["C"]), loss="hinge", random_state=42, dual=True, max_iter=10000)
+    else:
+        best_model = SVC(
+            C=cast(Any, best_result["C"]),
+            kernel=cast(Any, best_result["kernel"]),
+            gamma=cast(Any, best_result["gamma"]),
+            random_state=42
+        )
     best_model.fit(train_x, train_y)
     best_test_preds = best_model.predict(test_x)
     
@@ -187,9 +213,9 @@ def main():
     logging.info("Starting experiment runner...")
     ds = dataset.load_dataset()
     
+    # To test with a subset, uncomment the line below:
+    # dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
     dataset_df = ds.df
-    dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
-
         
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
     pipeline_pycatch22 = partial(transforms.pipeline_pycatch22, window_size=10, overlap=0)
