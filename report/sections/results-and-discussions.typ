@@ -52,9 +52,9 @@
     - S6: Único dispositivo comprometido (IoT)
     - S7: Dispositivos IoT comprometidos (IoT + IoT)
 
+  Os resultados obtidos estão estruturados nas tabelas a seguir, os valores apresentados são as médias das 5 execuções de cada modelo. De forma geral, os resultados estão semelhantes aos encontrados no artigo de referência, com margem aceitável de até 0.20.
+
   ==== Cenário 0 - Todos as configurações combinadas
-  
-  Os resultados obtidos estão na @tab:mal-vs-ben-1-cenario-0, os valores apresentados são as médias das 5 execuções de cada modelo. De forma geral, os resultados estão semelhantes aos encontrados no artigo de referência, com margem aceitável de até 0.20.
 
   #figure(
     table(
@@ -115,6 +115,96 @@
 
   ==== Cenário 3 - In-Browser vs. Binary
   
+  #figure(
+    table(
+      columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Tipo*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [In-Browser], [0.95], [0.95], [0.95], [0.95], [0.99],
+      [Binary], [0.99], [0.99], [0.99], [0.99], [1.00],
+      table.hline(y: 3, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 3* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-3>
+
+  ==== Cenário 4 - Rede totalmente comprometida (Geral)
+
+  Nesse cenário todos os dispositivos conectados a rede estão comprometidos.
+
+  #figure(
+    table(
+      columns: (3fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Rede*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Fully Compromised], [0.98], [0.98], [0.98], [0.98], [0.99],
+      table.hline(y: 2, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 4* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-4>
+
+  ==== Cenário 5 - Rede parcialmente comprometida (IoT + Laptop)
+
+  Nesse cenário apenas os dispositivos IoT e os Laptop conectados na rede estão comprometidos, utilizando diferentes tipos de _malware_ cryptojacking.
+
+  #figure(
+    table(
+      columns: (3fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Rede*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Partially Compromised], [0.98], [0.98], [0.98], [0.98], [1.00],
+      table.hline(y: 2, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 5* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-5>
+
+  ==== Cenário 6 - Rede unicamente comprometida (IoT)
+
+  Nesse cenário um único dispositivo IoT dentro da rede doméstica está comprometido, o qual executa uma quantidade de mineração limitada.
+
+  #figure(
+    table(
+      columns: (3fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Rede*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Single Compromised], [0.91], [0.91], [0.91], [0.91], [0.97],
+      table.hline(y: 2, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 6* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-6>
+
+  No artigo original os resultados foram de 0.94 para a acurácia, precisão, recall e f1 score, e 0.95 para o teste ROC.
+
+  ==== Cenário 7 - IoT comprometidos (IoT + IoT)
+
+  Nesse cenário todos os dispositivos IoT conectados estão comprometidos, os autores testaram em Raspberry Pi e WebOS Smart TV.
+
+  #figure(
+    table(
+      columns: (3fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Rede*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [IoT Compromised], [0.90], [0.90], [0.90], [0.90], [0.96],
+      table.hline(y: 2, stroke: 0.5pt),
+    ),
+    caption: [Resultados do *Cenário 7* (SVM)],
+  ) <tab:mal-vs-ben-1-cenario-7>
+
+  De forma geral, os resultados mostram que os cenários com mais dispositivos comprometidos são mais facilmente detectáveis enquanto que redes com apenas dispositivos IoT tendem a ser um pouco mais difícil de detectar dado ao volume de tráfego encontrado nesses dispositivos que podem ser confundidos com a atividade de mineração.
 
   === Maliciosos vs. Benignos (2)
 
