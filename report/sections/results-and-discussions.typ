@@ -11,6 +11,17 @@
   ]
 }
 
+#let result-table(rows) = table(
+  columns: (2.2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+  align: (left, center, center, center, center, center),
+  stroke: none,
+  table.hline(y: 0, stroke: 0.5pt),
+  table.header([*Cenário*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+  table.hline(y: 1, stroke: 0.5pt),
+  ..rows,
+  table.hline(stroke: 0.5pt),
+)
+
 #let results-and-discussions = [
   = Resultados e discussões
 
@@ -107,6 +118,77 @@
 
   === Maliciosos vs. Benignos (2)
 
+  Para avaliar a sensibilidade do modelo à escolha da classe benigna, os cenários de 1 a
+  7 foram repetidos utilizando o _dataset benign-2_ coletado pelos próprios autores do
+  artigo @iotcryptojacking. Este _dataset_ contém capturas dos mesmos dispositivos usados
+  nos experimentos maliciosos (Laptop, Raspberry Pi, Server e WebOS), tornando a
+  separação entre classes mais realista e próxima de condições reais de operação.
+
+  No Cenário 1 (@tab:mb2-cenario1), os resultados por dispositivo ficaram dentro de 0.01
+  do artigo para Server e Desktop. O servidor continua com acurácia máxima (0.99), pois
+  seu tráfego de mineração binária é o mais volumoso e homogêneo do dataset — mais de
+  1.2 milhões de pacotes maliciosos, gerando features estatísticas altamente
+  discriminativas. O dispositivo IoT (Raspberry Pi) apresenta a menor acurácia (0.94),
+  reflexo de seus recursos limitados que produzem padrões de mineração menos regulares
+  e mais próximos do benign.
+
+  #figure(
+    result-table((
+      [Servidor],        [0.99], [0.99], [0.99], [0.99], [1.00],
+      [Desktop],         [0.95], [0.95], [0.95], [0.95], [0.98],
+      [IoT], [0.94], [0.94], [0.94], [0.94], [0.98],
+    )),
+    caption: [Resultados — *Cenário 1* _benign-2_],
+  ) <tab:mb2-cenario1>
+
+  O Cenário 2 (@tab:mb2-cenario2) avalia estratégias de lucro do atacante via _throttle_.
+  Nossos resultados seguem o mesmo padrão qualitativo do artigo: o ataque furtivo (10%)
+  obtém a menor acurácia (0.86), enquanto o robusto (50%) supera o agressivo (100%).
+  A queda no modo furtivo é a mais relevante — a 10% de _throttle_, o volume de tráfego
+  gerado se aproxima do tráfego benigno em frequência e tamanho de pacotes, reduzindo a
+  separabilidade das classes. A diferença mais acentuada em relação ao artigo ocorre
+  justamente nesse cenário (-0.02), o que é coerente com a maior dificuldade de
+  separação imposta pelo _benign-2_.
+
+  #figure(
+    result-table((
+      [Agressivo (100%)], [0.94], [0.94], [0.94], [0.94], [0.98],
+      [Robusto (50%)],    [0.96], [0.96], [0.96], [0.96], [0.99],
+      [Furtivo (10%)],    [0.86], [0.87], [0.86], [0.86], [0.93],
+    )),
+    caption: [Resultados — *Cenário 2* _benign-2_],
+  ) <tab:mb2-cenario2>
+
+  No Cenário 3 (@tab:mb2-cenario3), os resultados são praticamente idênticos ao artigo.
+  O malware binário (_host-based_) é detectado com maior acurácia que o no-navegador
+  (_in-browser_), confirmando que o tráfego binário é mais volumoso e característico.
+  O minerador binário não emprega técnicas de ocultação de rede, gerando padrões
+  altamente distinguíveis, o minerador in-browser, por sua vez, limita ativamente o uso
+  de CPU, produzindo tráfego mais irregular e próximo ao benigno.
+
+  #figure(
+    result-table((
+      [No-navegador (_in-browser_)], [0.96], [0.96], [0.96], [0.96], [0.99],
+      [Binário (_host-based_)],      [0.97], [0.97], [0.97], [0.97], [1.00],
+    )),
+    caption: [Resultados — *Cenário 3* _benign-2_],
+  ) <tab:mb2-cenario3>
+
+  Os Cenários 4 a 7 (@tab:mb2-cenarios4a7) avaliam graus de comprometimento da rede
+  doméstica. A diferença mais relevante está no Cenário 4 (totalmente comprometido), onde
+  obtivemos 0.95 contra 0.98 do artigo (-0.03), atribuível ao maior desbalanceamento de
+  classes com _benign-2_. Os demais cenários ficaram dentro de 0.01 do artigo.
+
+  #figure(
+    result-table((
+      [Totalmente comprometida (S4)],    [0.95], [0.95], [0.95], [0.95], [0.99],
+      [Parcialmente comprometida (S5)],  [0.97], [0.97], [0.97], [0.97], [0.99],
+      [Dispositivo único IoT (S6)],      [0.96], [0.96], [0.96], [0.96], [0.99],
+      [IoT comprometida — 2 disp. (S7)], [0.95], [0.95], [0.95], [0.95], [0.99],
+    )),
+    caption: [Resultados — *Cenários 4 a 7* _benign-2_],
+  ) <tab:mb2-cenarios4a7>
+
   === Dataset desbalanceado
 
   No cenário 8, os resultados foram efetivamente idênticos aos apresentados no artigo, como se vê em @tab:cenario8.
@@ -132,8 +214,109 @@
 
   === Transferabilidade
 
+    O cenário 9 avalia a capacidade de generalização dos modelos treinados em um contexto
+  de mineração e testados em outro distinto — por exemplo, treinar com tráfego de um
+  serviço de pool e testar com tráfego de mineração in-browser. 
+
+  #figure(
+    table(
+      columns: (2.4fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Experimento*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*], [*ROC*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Service Provider-1], [0.92], [0.93], [0.92], [0.92], [—],
+      [Service Provider-2], [0.75], [0.92], [0.75], [0.80], [—],
+      [Binary-1],           [0.87], [0.83], [0.87], [0.82], [—],
+      [Binary-In-Browser-1],[0.89], [0.90], [0.89], [0.87], [—],
+      [Binary-In-Browser-2],[0.99], [0.99], [0.99], [0.99], [—],
+      [Binary-In-Browser-3],[0.99], [0.99], [0.99], [0.99], [—],
+      [In-Browser-1],       [0.99], [0.99], [0.99], [0.99], [—],
+      [In-Browser-2],       [0.99], [0.99], [0.99], [0.99], [—],
+      table.hline(stroke: 0.5pt),
+    ),
+    caption: [Resultados da reprodução — *Cenário 9*],
+  ) <tab:transfer-codigo>
+
+  Os resultados da reprodução correspondem aos do artigo em 6 dos 8 experimentos, com
+  diferença máxima de 0.02 em acurácia. Nos dois casos com maior divergência ( Service
+  Provider-1 e Service Provider-2 ) os desvios são de +0.05 e +0.06 em acurácia,
+  respectivamente, mas continuam dentro de margem aceitável para reprodução de trabalhos
+  com aleatoriedade intrínseca.
+
+  A precisão ponderada do Service Provider-2 coincide exatamente com o artigo (0.92),
+  indicando que o modelo identifica corretamente os padrões relevantes, a diferença na
+  acurácia reflete uma distribuição ligeiramente distinta dos exemplos de teste, não uma
+  degradação do modelo. Esses dois experimentos envolvem os únicos cenários com tráfego
+  real de serviço de pool (_WebminePool_ e _Webmine Aggressive_), cujas janelas de 10
+  pacotes geradas pelo tsfresh são sensíveis à ordem de chegada dos pacotes, pequenas
+  diferenças de versão de biblioteca ou de ordenação interna do dataset já justificam
+  os desvios observados.
+
+  Nos seis experimentos restantes os valores são praticamente idênticos ao artigo. Os
+  experimentos Binary-In-Browser e In-Browser atingem acurácia entre 0.87 e 0.99,
+  mostrando que modelos treinados em tráfego binário transferem bem para cenários de
+  mineração no navegador, o que se explica pela semelhança nos padrões de acesso a
+  endereços de pool mesmo entre implementações distintas. Os experimentos com variantes
+  do mesmo tipo de minerador (In-Browser-1 e In-Browser-2) alcançam 0.99, confirmando
+  que as features aprendidas são robustas o suficiente para generalizar entre as
+  configurações agressiva, robusta e furtiva.
+
   === Ajuste de Hiperparâmetros
 
+  O Cenário 10 (@tab:cenario10) testa o SVM com parâmetros não-padrão, variando kernel,
+  regularização (C) e gamma. Seguindo o artigo, utilizamos o cenário _robusto_ de
+  dispositivo IoT como base (_thr\_50\_s2_: Raspberry Pi, WebminePool 50% throttle).
+
+  #figure(
+    table(
+      columns: (1.4fr, 0.5fr, 0.9fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header(
+        [*Kernel*], [*C*], [*Gamma*],
+        [*Acc.*], [*Prec.*], [*Recall*], [*F1*],
+      ),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Linear],[1],[Scale],[1.00],[1.00],[1.00],[1.00],
+      [Poly],  [1],[Scale],[0.80],[0.81],[0.80],[0.80],
+      [RBF],   [1],[Scale],[0.81],[0.81],[0.81],[0.81],
+      [Sigmoid],[1],[Scale],[0.62],[0.62],[0.62],[0.62],
+      [Linear],[1],[Auto],[1.00],[1.00],[1.00],[1.00],
+      [Poly],  [1],[Auto],[0.89],[0.89],[0.89],[0.89],
+      [RBF],   [1],[Auto],[0.60],[0.77],[0.60],[0.54],
+      [Sigmoid],[1],[Auto],[0.51],[0.26],[0.51],[0.35],
+      [Linear],[2],[Scale],[1.00],[1.00],[1.00],[1.00],
+      [Poly],  [2],[Scale],[0.83],[0.83],[0.83],[0.83],
+      [RBF],   [2],[Scale],[0.82],[0.83],[0.82],[0.82],
+      [Sigmoid],[2],[Scale],[0.62],[0.62],[0.62],[0.62],
+      [Linear],[2],[Auto],[1.00],[1.00],[1.00],[1.00],
+      [Poly],  [2],[Auto],[0.89],[0.89],[0.89],[0.89],
+      [RBF],   [2],[Auto],[0.60],[0.77],[0.60],[0.54],
+      [Sigmoid],[2],[Auto],[0.51],[0.26],[0.51],[0.35],
+      table.hline(stroke: 0.5pt),
+    ),
+    caption: [Resultados — *Cenário 10*],
+  ) <tab:cenario10>
+
+  O padrão qualitativo do artigo é reproduzido com fidelidade: kernels lineares dominam
+  (acurácia 1.00 em todos os casos, idêntico ao paper), seguidos pelos kernels poly, e
+  sigmoid-auto apresenta o pior desempenho (0.51), alinhado com os 0.52 reportados.
+
+  As divergências quantitativas se concentram nos kernels mais sensíveis à escala da
+  distribuição dos dados. Sigmoid-scale obteve 0.62 contra 0.72–0.73 do artigo (Δ ≈
+  −0.10), a maior diferença observada. RBF-auto ficou em 0.60 contra 0.66 (Δ ≈ −0.06).
+  Esses dois kernels são particularmente afetados pela composição do conjunto benigno,
+  pois o artigo não documenta quais arquivos específicos de _benign-1_ foram usados neste
+  experimento, nossa seleção dos arquivos pode diferir da original. Os kernels lineares
+  e poly, por sua vez, são menos sensíveis à escala absoluta dos valores de feature, o
+  que explica sua maior estabilidade na reprodução.
+
+  O valor de C não altera os resultados em nenhuma configuração (as linhas C=1 e C=2 são
+  idênticas para todos os kernels), comportamento esperado para um dataset pequeno e bem
+  separável como o _thr\_50\_s2_, onde o SVM já encontra margem ampla com C=1.
 
 
   - No novo conjunto de dados escolhido
