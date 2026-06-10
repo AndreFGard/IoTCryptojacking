@@ -95,9 +95,16 @@ def run_experiment(
     test_preds = model.predict(test_x)
 
     metrics = {
-        "train": cast(dict[str, Any], classification_report(train_y, train_preds, output_dict=True)),
-        "val": cast(dict[str, Any], classification_report(val_y, val_preds, output_dict=True)),
-        "test": cast(dict[str, Any], classification_report(test_y, test_preds, output_dict=True)),
+        "train": cast(
+            dict[str, Any],
+            classification_report(train_y, train_preds, output_dict=True),
+        ),
+        "val": cast(
+            dict[str, Any], classification_report(val_y, val_preds, output_dict=True)
+        ),
+        "test": cast(
+            dict[str, Any], classification_report(test_y, test_preds, output_dict=True)
+        ),
     }
 
     logging.info(
@@ -117,11 +124,17 @@ def tune_svc(
     out_dir: str | pathlib.Path = "data/ours/",
 ) -> pd.DataFrame:
     import itertools
+
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(exist_ok=True, parents=True)
 
     C_values = [1, 2]
-    kernels: list[Literal["linear", "poly", "rbf", "sigmoid"]] = ["linear", "poly", "rbf", "sigmoid"]
+    kernels: list[Literal["linear", "poly", "rbf", "sigmoid"]] = [
+        "linear",
+        "poly",
+        "rbf",
+        "sigmoid",
+    ]
     gammas: list[Literal["scale", "auto"]] = ["scale", "auto"]
 
     train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
@@ -142,23 +155,31 @@ def tune_svc(
         # we copy the result of gamma == 'scale' when gamma == 'auto' is processed.
         if kernel == "linear" and gamma == "auto":
             prev_comb = f"SVC - {C} - linear - scale"
-            prev_res = next((r for r in results if r["combination_name"] == prev_comb), None)
+            prev_res = next(
+                (r for r in results if r["combination_name"] == prev_comb), None
+            )
             if prev_res is not None:
-                results.append({
-                    "combination_name": comb_name,
-                    "C": C,
-                    "kernel": kernel,
-                    "gamma": gamma,
-                    "val_f1_macro": prev_res["val_f1_macro"],
-                    "test_f1_macro": prev_res["test_f1_macro"]
-                })
-                logging.info(f"{comb_name} - Val F1 Macro: {prev_res['val_f1_macro']:.4f} | Test F1 Macro: {prev_res['test_f1_macro']:.4f} (copied from scale)")
+                results.append(
+                    {
+                        "combination_name": comb_name,
+                        "C": C,
+                        "kernel": kernel,
+                        "gamma": gamma,
+                        "val_f1_macro": prev_res["val_f1_macro"],
+                        "test_f1_macro": prev_res["test_f1_macro"],
+                    }
+                )
+                logging.info(
+                    f"{comb_name} - Val F1 Macro: {prev_res['val_f1_macro']:.4f} | Test F1 Macro: {prev_res['test_f1_macro']:.4f} (copied from scale)"
+                )
                 continue
 
         logging.info(f"Training {comb_name}...")
 
         if kernel == "linear":
-            model = LinearSVC(C=C, loss="hinge", random_state=42, dual=True, max_iter=10000)
+            model = LinearSVC(
+                C=C, loss="hinge", random_state=42, dual=True, max_iter=10000
+            )
         else:
             model = SVC(C=C, kernel=kernel, gamma=gamma, random_state=42)
 
@@ -170,15 +191,16 @@ def tune_svc(
         test_preds = model.predict(test_x)
         test_f1 = f1_score(test_y, test_preds, average="macro")
 
-        results.append({
+        res_d = {
             "combination_name": comb_name,
             "C": C,
             "kernel": kernel,
             "gamma": gamma,
             "val_f1_macro": val_f1,
-            "test_f1_macro": test_f1
-        })
-        logging.info(f"{comb_name} - Val F1 Macro: {val_f1:.4f} | Test F1 Macro: {test_f1:.4f}")
+            "test_f1_macro": test_f1,
+        }
+        results.append(res_d)
+        logging.info(f"{comb_name} - {res_d}")
 
     df_results = pd.DataFrame(results).sort_values("val_f1_macro")
     out_path = out_dir / "svc_tune_result.csv"
@@ -187,20 +209,28 @@ def tune_svc(
 
     # Output detailed classification report on test set for the best model based on validation F1 score
     best_result = max(results, key=lambda x: x["val_f1_macro"])
-    logging.info(f"Best combination based on Validation F1: {best_result['combination_name']} (Val F1: {best_result['val_f1_macro']:.4f})")
-    
+    logging.info(
+        f"Best combination based on Validation F1: {best_result['combination_name']} (Val F1: {best_result['val_f1_macro']:.4f})"
+    )
+
     if best_result["kernel"] == "linear":
-        best_model = LinearSVC(C=cast(Any, best_result["C"]), loss="hinge", random_state=42, dual=True, max_iter=10000)
+        best_model = LinearSVC(
+            C=cast(Any, best_result["C"]),
+            loss="hinge",
+            random_state=42,
+            dual=True,
+            max_iter=10000,
+        )
     else:
         best_model = SVC(
             C=cast(Any, best_result["C"]),
             kernel=cast(Any, best_result["kernel"]),
             gamma=cast(Any, best_result["gamma"]),
-            random_state=42
+            random_state=42,
         )
     best_model.fit(train_x, train_y)
     best_test_preds = best_model.predict(test_x)
-    
+
     report_str = cast(str, classification_report(test_y, best_test_preds))
     logging.info("\nTest set classification report for the best model:\n" + report_str)
 
@@ -212,19 +242,23 @@ def main():
     configure_logging()
     logging.info("Starting experiment runner...")
     ds = dataset.load_dataset()
-    
+
     # To test with a subset, uncomment the line below:
     # dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
     dataset_df = ds.df
-        
+
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
-    pipeline_pycatch22 = partial(transforms.pipeline_pycatch22, window_size=10, overlap=0)
-    
-    _, train, val, test, selected_features, _ = run_experiment("tsfresh", tsfresh_fn, SVC())
-    
+    pipeline_pycatch22 = partial(
+        transforms.pipeline_pycatch22, window_size=10, overlap=0
+    )
+
+    _, train, val, test, selected_features, _ = run_experiment(
+        "tsfresh", tsfresh_fn, SVC()
+    )
+
     # Run hyperparameter tuning on the dataset splits
     tune_svc(train, val, test, selected_features)
-    
+
     logging.info("All experiments finished.")
 
 
