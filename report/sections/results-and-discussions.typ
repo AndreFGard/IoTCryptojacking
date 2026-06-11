@@ -251,8 +251,7 @@
 
   Os resultados da reprodução correspondem aos do artigo em 6 dos 8 experimentos, com
   diferença máxima de 0.02 em acurácia. Nos dois casos com maior divergência (Service Provider-1 e Service Provider-2) os desvios são de +0.05 e +0.06 em acurácia,
-  respectivamente, mas continuam dentro de margem aceitável para reprodução de trabalhos
-  com aleatoriedade intrínseca.
+  respectivamente.
 
   A precisão ponderada do Service Provider-2 coincide exatamente com o artigo (0.92),
   indicando que o modelo identifica corretamente os padrões relevantes, a diferença na
@@ -335,7 +334,7 @@
 
   === Ajuste de Hiperparâmetros
 
-/*   #figure(
+   #figure(
     {
       let data = csv("../data/our_svc_tune_results.csv")
       table(
@@ -350,15 +349,15 @@
       )
     },
     caption: [Resultados do ajuste de hiperparâmetros do SVM no novo conjunto de dados.],
-  ) <tab:our-svc-tune> */
+  ) <tab:our-svc-tune>
 
   O kernel foi o parâmetro mais determinante para o desempenho do modelo, com RBF e Poly obtendo resultados próximos, apesar de o primeiro treinar mais rápido. O parâmetro C também foi importante, e o peso das classes se mostrou útil para lidar com o desbalanceamento.
 
-  === Resultados finais
+  === Resultados finais <result_ours>
 
   A configuração que maximizou o F1 Macro no conjunto de validação foi o SVM com kernel RBF, C=2, gamma=auto e pesos balanceados. Os resultados no conjunto de teste são apresentados em @tab:our-svc-best.
 
-  O modelo obteve desempenho quase perfeito na classe benigna (F1 = 0.99), reflexo do grande volume de amostras benignas disponíveis. Para a classe maliciosa, o recall de 0.95 indica que apenas 5% dos ataques não foram detectados, enquanto a precisão de 88% indica uma quantidade considerável de falsos positivos. O F1 Macro de 0.96 confirma que o modelo equilibra bem as duas classes, apesar do desbalanceamento acentuado, com quase 60x mais janelas benignas que malignas.
+  O modelo obteve desempenho quase perfeito na classe benigna (F1 = 0.99), reflexo do grande volume de amostras benignas disponíveis para treinamento. Para a classe maliciosa, o recall de 0.95 indica que apenas 5% dos ataques não foram detectados, embora a precisão de 88% indique uma quantidade considerável de falsos positivos. O F1 Macro de 0.96 confirma que o modelo equilibra bem as duas classes, apesar do desbalanceamento acentuado. Portanto, pode-se concluir que o desempenho do modelo foi satisfatório
 
   #figure(
     table(
@@ -379,6 +378,7 @@
   ) <tab:our-svc-best>
 
   === Discussão
+  Os resultados descritos acima ilustram o desafio não só de treinar, mas especialmente de avaliar dados com um desabalanceamento tão grande quanto o em questão. É evidente que a média ponderada de qualquer métrica é enganosa em casos como este, enquanto a simples consegue preservar um significado relevante. Ademais, o dataset descrito em 
 
   //Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
 

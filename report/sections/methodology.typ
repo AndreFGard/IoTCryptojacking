@@ -152,27 +152,4 @@
 
   O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca, ajustando o peso das classes de forma a amenizar os efeitos da super-representação de uma classe. Nesse sentido, o uso do F1 Macro ao invés do F1 Ponderado também é crucial#footnote[Uma métrica Macro, como o F1 Macro, une o F1 de ambas as classes com uma média simples, invariante a desbalanceamento, enquanto as métricas ponderadas (_weighted_) aumentam o peso de uma classe na métrica final de acordo com a sua representatividade], pois esse é mais robusto ao desbalanceamento.
 
-  == Métricas de avaliação
-
-  Para essa seção, utiliza-se as seguintes variáveis:
-  - TP: _True Positive_, significa que o modelo corretamente previu a instância como maliciosa;
-  - FP: _False Positive_, significa que o modelo incorretamente previu a instância como maliciosa;
-  - TN: _True Negative_, significa que o modelo corretamente previu a instância como benigna;
-  - FN: _False Negative_, significa que o modelo incorretamente previu a instância como benigna;
-
-  Para avaliar o desempenho do modelo no novo dataset, foi usado as seguintes métricas:
-
-  - Acurácia: representa a quantidade de previsões corretas do modelo (instâncias maliciosas e benignas). Devido ao desbalanceamento entre as classes, nem sempre representará bem a qualidade do modelo
-  $ "Acurácia" = ("TP" + "TN")/("TP"+"FP"+"TN"+"FN") $ <eq:equacao-da-reta>
-
-  - Precisão: a proporção de previsões positivas (maliciosas) corretas
-  $ "Precisão" = ("TP")/("TP"+"FP") $ <eq:equacao-da-reta>
-
-  - _Recall_: representa quantas das instâncias maliciosas o modelo conseguiu detectar
-  $ "Recall" = ("TP")/("TP"+"FN") $ <eq:equacao-da-reta>
-
-  - F1 _Score_: a média harmônica entre precisão e _recall_. Útil para lidar com classes desbalanceadas, gerando uma métrica única para avaliar o desempenho na classe positiva
-  $ "F1 Score" = 2* ("Precisão" * "Recall")/("Precisão" + "Recall") $ <eq:equacao-da-reta>
-
-
 ]
