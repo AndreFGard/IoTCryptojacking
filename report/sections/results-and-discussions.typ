@@ -368,19 +368,69 @@
   separável como o _thr\_50\_s2_, onde o SVM já encontra margem ampla com C=1.
 
 
-  - No novo conjunto de dados escolhido
+  == Resultados no novo conjunto de dados
 
-  Utilizar gráficos e tabelas. Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
+  Com a reprodução do método de @iotcryptojacking, segundo descrito em #text(fill: red)[SUBSTITUA-ME-POR-REFERENCIA], fizemos um ajuste de hiperparâmetros e selecionamos o melhor modelo. 
+  Utilizar gráficos e tabelas.
 
-  == Resultados proposta de melhoria do artigo de referência (CASO FEITA)
+  === Ajuste de Hiperparâmetros
 
-  - Nos dados usados pelo artigo de referência
-  - No novo conjunto de dados escolhido
+  #figure(
+    {
+      let data = csv("../data/our_svc_tune_results.csv")
+      table(
+        columns: (auto, auto, auto, auto, auto, auto),
+        align: (left, center, center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Resultados do ajuste de hiperparâmetros do SVM no novo conjunto de dados.],
+  ) <tab:our-svc-tune>
 
-  Utilizar gráficos e tabelas. Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
+  Vimos que o kernel foi o parâmetro mais determinante pro desempenho dos modelo, com o RBF e Poly obtendo resultados próximos, apesar do treinamento do primeiro ser mais rápido. O parâmetro C também foi importante, e o peso das classes se mostrou útil para lidar com o desbalanceamento.
 
-  Comparar e discutir os resultados da proposta de melhoria com os resultados obtidos com a reprodução do artigo de referência.
+  === Resultados finais
 
-  == discussões
-  - apontar os erros q percebemos no artiigp
+  A configuração que maximizou o F1 Macro no conjunto de validação foi o SVM com kernel RBF, C=2, gamma=auto e pesos balanceados. Os resultados no conjunto de teste são apresentados em @tab:our-svc-best.
+
+  O modelo obteve desempenho quase perfeito na classe benigna (F1 = 0.99), reflexo do grande volume de amostras benignas disponíveis. Para a classe maliciosa, o recall de 0.95 indica que apenas 5% dos ataques não foram detectados, enquanto a precisão de 88% indica uma quantidade considerável de falsos positivos. O F1 Macro de 0.96 confirma que o modelo equilibra bem as duas classes, apesar do desbalanceamento acentuado, com quase 60x mais janelas benignas que malignas.
+
+  #figure(
+    table(
+      columns: (2fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header([*Classe*], [*Prec.*], [*Recall*], [*F1*], [*Suporte*]),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Benigno],         [0.99], [0.99], [0.99], [30.456],
+      [Malicioso],       [0.88], [0.95], [0.91], [540],
+      table.hline(stroke: 0.5pt),
+      [*Macro avg*],     [*0.94*], [*0.97*], [*0.96*], [30.996],
+      [*Weighted avg*],  [1.00], [1.00], [1.00], [30.996],
+      table.hline(stroke: 0.5pt),
+    ),
+    caption: [Relatório de classificação do melhor SVM (RBF, C=2, gamma=auto, pesos balanceados) no conjunto de teste do novo dataset.],
+  ) <tab:our-svc-best>
+
+  === Discussão
+
+  //Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
+
+  // == Resultados proposta de melhoria do artigo de referência (CASO FEITA)
+
+  // - Nos dados usados pelo artigo de referência
+  // - No novo conjunto de dados escolhido
+
+  // Utilizar gráficos e tabelas. Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
+
+  // Comparar e discutir os resultados da proposta de melhoria com os resultados obtidos com a reprodução do artigo de referência.
+
+  // == discussões
+  // - apontar os erros q percebemos no artiigp
 ]
