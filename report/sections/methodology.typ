@@ -32,33 +32,38 @@
   === Dados Maliciosos
   Foram coletados pelos próprios autores, reproduzindo o cenário de uma rede residencial de _IoT_. Então, os dados foram separados entre os tipos de dispositivos, entre ataques binários e baseados em navegador - que foram separados de acordo com o provedor do _script_ de mineração - e estratégia de lucro envolvidos, capturando uma variedade significativa, como se vê em @fig:dist-malicioso. Foi necessário criar este novo _dataset_ devido a falta de outros que abordem Cryptojacking em um ambiente pensado em _IoT_. Como esperado, dispositivos mais fortes produzem mais tráfego, estando mais representados que os mais fracos.
   #figure(
-    grid(
-      columns: 1,
-      column-gutter: 1em,
-      {
-        let data = csv("../data/malicious_dist.csv")
-        table(
-          columns: (1fr, 1.2fr, 1.2fr, 1.2fr),
-          align: (left, left, left, right, right),
-          stroke: none,
-          table.hline(y: 0, stroke: 0.5pt),
-          table.header(..data.at(0).map(x => [*#x*])),
-          table.hline(y: 1, stroke: 0.5pt),
-          ..data.slice(1, -1).flatten().map(x => if x == "" { [] } else { x }),
-          table.hline(y: 12, stroke: 0.5pt),
-          ..data.last().map(x => [*#x*]),
-          table.hline(y: 13, stroke: 0.5pt),
-        )
-      },
-    ),
-    caption: [N. de pacotes maliciosos por dispositivo, estratégia e tipo de ataque (original vs. pós-poda por endereço MAC).],
+    {
+      let data = csv("../data/malicious_dist.csv")
+      table(
+        columns: (1fr, 1.2fr, 1.2fr, 1.2fr),
+        align: (left, left, left, right, right),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1, -1).flatten().map(x => if x == "" { [] } else { x }),
+        table.hline(y: 12, stroke: 0.5pt),
+        ..data.last().map(x => [*#x*]),
+        table.hline(y: 13, stroke: 0.5pt),
+      )
+    },
+    caption: [N. de pacotes maliciosos por dispositivo, estratégia e tipo de ataque.],
   ) <fig:dist-malicioso>
+
+  #figure(
+    image("../imagens/malicious_distribution.png", width: 90%),
+    caption: [Distribuição de pacotes maliciosos por dispositivo e tipo de ataque, em escala logarítmica.],
+  ) <fig:dist-malicioso-img>
 
   === Dados benignos
   A princípio, foi usado em @iotcryptojacking um dataset benigno já publicamente disponível. No entanto, os autores criaram ainda outro dataset benigno, garantindo a padronização dos tipos de dispositivo usados, além de uma diversidae grande do tipo de tráfego benigno produzido. Nesse caso, para cada dispositivo, foram simulados usos voltados para _downloads_, uso ocioso, uso interativo, navegação _Web_ e consumo de vídeos, exceto no caso do WebOS, para o qual só foram coletados dados de transmissão de vídeos, de forma consistente com o seu uso real, como apresentado em @fig:dist-benigno.
 
   #figure(
-    //image("../imagens/benign_distribution.png", width: 100%),
+    image("../imagens/benign_distribution.png", width: 90%),
+    caption: [Distribuição de pacotes benignos (_benign-2_) por dispositivo e atividade.],
+  ) <fig:dist-benigno>
+
+  #figure(
     align(center + horizon, {
       let data = csv("../data/benign_dist.csv")
       table(
@@ -74,8 +79,8 @@
         table.hline(y: 6, stroke: 0.5pt),
       )
     }),
-    caption: [Distribuição de pacotes benignos (benign-2) por dispositivo e atividade.],
-  ) <fig:dist-benigno>
+    caption: [Distribuição de pacotes benignos (_benign-2_) por dispositivo e atividade, valores absolutos.],
+  ) <tab:dist-benigno>
 
   //tabela com a quantidade de dados por classe em treino,teste (lembrar de reforçar que usa cross validation)
 
@@ -111,6 +116,19 @@
   Adicionalmente, todo o tráfego de criptomoedas está dividido em _full node_ (ou seja, um servidor que armazena o histórico completo da blockchain e valida transações de forma independente) e _miner_ (que contém o tráfego gerado pela mineração delas). O tráfego do _full node_ foge do escopo de _cryptojacking_ em dispositivos IoT, e portanto foi utilizado apenas os conjuntos do _miner_ para a avaliação do modelo, os quais foram rotulados como malignos.
 
   O _dataset_ foi escolhido por se encaixar perfeitamente na proposta do artigo de referência, tendo sido fornecidos ao modelo apenas as _features_ de tempo e tamanho do pacote, mas com uma variedade extra que enriquece a avaliação. Além disso, a inclusão de tráfego afetado por VPNs, uma técnica de obfuscação de tráfego não considerada anteriormente, também avalia a robustez do sistema proposto.
+
+  A distribuição das amostras por atividade é apresentada em @fig:cnt21-activity enquanto a distribuição por tipo de VPN é apresentada em @fig:cnt21-vpn. O desbalanceamento entre classes benignas e maliciosas é severo, o que exige métricas robustas ao desbalanceamento e o ajuste de pesos de classe durante o treinamento.
+
+  #figure(
+    image("../imagens/activity_variables.png", width: 90%),
+    caption: [Distribuição de janelas no CNT21 por atividade, separadas por classe (benigno vs. malicioso).],
+  ) <fig:cnt21-activity>
+
+
+  #figure(
+    image("../imagens/vpn_variables.png", width: 90%),
+    caption: [Distribuição de janelas no CNT21 por tipo de VPN, separadas por classe (benigno vs. malicioso).],
+  ) <fig:cnt21-vpn>
 
   == Preprocessamento <metodol_ours>
 
