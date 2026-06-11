@@ -149,7 +149,7 @@
   Fizemos uma busca em grade (*Grid Search*) usando o conjunto de validação, testando as seguintes combinações:
   - Custo ($C$): $1$ e $2$;
   - *Kernel*: Linear, Polinomial, RBF e Sigmoide;
-  - $\gamma$ (Gamma): _Scale_ e _Auto_;
+  - $gamma$ (Gamma): _Scale_ e _Auto_;
   - Pesos das classes (_class\_weight_): _Balanced_ e _None_.
 
   O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca. Ele atua ajustando o peso dos erros de acordo com a frequência de cada classe. Na prática, isso força o modelo a dar a devida atenção aos dados maliciosos, evitando que ele tente atingir uma alta acurácia global simplesmente classificando tudo como benigno.
