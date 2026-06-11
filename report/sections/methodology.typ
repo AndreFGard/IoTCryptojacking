@@ -88,7 +88,7 @@
     {
       let data = csv("../data/split_dist.csv")
       table(
-        columns: (auto, auto,auto, auto, auto, auto),
+        columns: (auto, auto, auto, auto, auto, auto),
         align: (left, right, right, right, right, right),
         stroke: none,
         table.hline(y: 0, stroke: 0.5pt),
@@ -106,24 +106,22 @@
 
   == Novo conjunto de dados escolhido
 
-  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_" (CNT21), disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre o tráfego de entrada (_ingoing_) e saída (_outgoing_) e uma parcela deles foi mascarado por uma VPN (_NordVPN_ ou _ExpressVPN_).
+  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_" (CNT21), disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre tráfego de entrada e saída, e também há variações com VPNs e sem.
 
-  Adicionalmente, todo o tráfego de criptomoedas está dividido em _full node_ (ou seja, um servidor que armazena o histórico completo da blockchain e valida transações de forma independente) e _miner_ (que contém o tráfego gerado pela mineração delas). O tráfego do _full node_ foge do escopo de _cryptojacking_ e portanto foi utilizado apenas os conjuntos do _miner_ para a avaliação do modelo, os quais foram rotulados como malignos.
+  Adicionalmente, todo o tráfego de criptomoedas está dividido em _full node_ (ou seja, um servidor que armazena o histórico completo da blockchain e valida transações de forma independente) e _miner_ (que contém o tráfego gerado pela mineração delas). O tráfego do _full node_ foge do escopo de _cryptojacking_ em dispositivos IoT, e portanto foi utilizado apenas os conjuntos do _miner_ para a avaliação do modelo, os quais foram rotulados como malignos.
 
-  O _dataset_ foi escolhido por se encaixar perfeitamente na proposta do artigo de referência, utilizando apenas o fluxo de rede com as _features_ de tempo e tamanho do pacote. Além disso, a inclusão de tráfego afetado por VPNs, algo que não foi experimentado no modelo original, serve como um bom teste para a robustez do sistema proposto.  
+  O _dataset_ foi escolhido por se encaixar perfeitamente na proposta do artigo de referência, tendo sido fornecidos ao modelo apenas as _features_ de tempo e tamanho do pacote, mas com uma variedade extra que enriquece a avaliação. Além disso, a inclusão de tráfego afetado por VPNs, uma técnica de obfuscação de tráfego não considerada anteriormente, também avalia a robustez do sistema proposto.
 
   == Preprocessamento
 
-  Inicialmente, os dados são agrupados baseados na sua fonte ("_activity_") e no VPN, caso tenha, para não ocorrer a mistura de tráfego nas janelas. Em seguida, dentro de cada grupo, serão criados blocos sequenciais de dados (as janelas) com tamanho e sobreposição definidas como $10$ e $0$, respectivamente. Após esse processamento, elas são divididas sequencialmente em conjuntos de treino, validação e teste.
-
-  Após o processo ter sido aplicado a cada grupo, eles são agregados no conjunto apropriado (seja treino, validação ou teste). A Table V contém as quantias exatas da divisão.
+  Inicialmente, os dados são agrupados baseados na sua fonte ("_activity_") e no tipo de VPN, se presente, distribuindo as classes igualmente entre os _splits_. Em seguida, dentro de cada grupo, são criadas janelas com o mesmo tamanho usado em @iotcryptojacking. Após esse processamento, elas são divididas sequencialmente em conjuntos de treino, validação e teste, evitando vazamento temporal de dados. Então, os respectivos conjuntos dos grupos são unidos, e @tab:divisao-dados-split-novo mostra a distribuição exata desses dados.
 
   #figure(
     {
       let data = csv("../data/split2.csv")
       set text(size: 8.5pt)
       table(
-        columns: (auto, auto,auto, auto, auto, auto),
+        columns: (auto, auto, auto, auto, auto, auto),
         align: (left, right, right, right, right, right),
         stroke: none,
         table.hline(y: 0, stroke: 0.5pt),
@@ -135,12 +133,12 @@
         table.hline(y: 4, stroke: 0.5pt),
       )
     },
-    caption: [Divisão das janelas de dados (10 pacotes por janela) do conjunto de dados completo para treino, validação e teste no novo _dataset_],
+    caption: [Divisão das janelas entre treino, validação e teste no novo _dataset_],
   ) <tab:divisao-dados-split-novo>
 
   === Extração de Features
 
-  Após a divisão, é feita a extração de _features_ nos dados. Utilizando a biblioteca _tsfresh_ são calculadas centenas de característícas matemáticas das duas colunas. Posteriormente, será testado a relevância das novas _features_ contra a classe alvo (_is_malicious_), mantendo apenas as mais relevantes (onde $"p_value" < 0,05$). 
+  Após a divisão, é feita a extração de _features_ nos dados. Como em @iotcryptojacking, usou-se a biblioteca _tsfresh_, que calcula centenas de característícas das duas colunas. Posteriormente, é testada a relevância das novas _features_ contra a classe alvo (_is_malicious_), mantendo apenas as mais relevantes (onde $"p_value" < 0,05$).
 
   === Modelo e Tuning de Hiperparâmetros
 
@@ -152,29 +150,6 @@
   - Gamma: Scale e Auto;
   - Pesos das classes (_class\_weight_): Balanced e None.
 
-  O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca. Ele atua ajustando o peso dos erros de acordo com a frequência de cada classe. Na prática, isso força o modelo a dar a devida atenção aos dados maliciosos, evitando que ele tente atingir uma alta acurácia global simplesmente classificando tudo como benigno.
-  
-  == Métricas de avaliação
-
-  Para essa seção, utiliza-se as seguintes variáveis:
-  - TP: _True Positive_, significa que o modelo corretamente previu a instância como maliciosa;
-  - FP: _False Positive_, significa que o modelo incorretamente previu a instância como maliciosa;
-  - TN: _True Negative_, significa que o modelo corretamente previu a instância como benigna;
-  - FN: _False Negative_, significa que o modelo incorretamente previu a instância como benigna;
-  
-  Para avaliar o desempenho do modelo no novo dataset, foi usado as seguintes métricas:
-
-  - Acurácia: representa a quantidade de previsões corretas do modelo (instâncias maliciosas e benignas). Devido ao desbalanceamento entre as classes, nem sempre representará bem a qualidade do modelo
-  $ "Acurácia" = ("TP" + "TN")/("TP"+"FP"+"TN"+"FN") $ <eq:equacao-da-reta>
-
-  - Precisão: a proporção de previsões positivas (maliciosas) corretas
-  $ "Precisão" = ("TP")/("TP"+"FP") $ <eq:equacao-da-reta>
-
-  - _Recall_: representa quantas das instâncias maliciosas o modelo conseguiu detectar
-  $ "Recall" = ("TP")/("TP"+"FN") $ <eq:equacao-da-reta>
-
-  - F1 _Score_: a média harmônica entre precisão e _recall_. Útil para lidar com classes desbalanceadas, gerando uma métrica única para avaliar o desempenho na classe positiva
-  $ "F1 Score" = 2* ("Precisão" * "Recall")/("Precisão" + "Recall") $ <eq:equacao-da-reta>
-
+  O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca, ajustando o peso das classes de forma a amenizar os efeitos da super-representação de uma classe. Nesse sentido, o uso do F1 Macro ao invés do F1 Ponderado também é crucial#footnote[Uma métrica Macro, como o F1 Macro, une o F1 de ambas as classes com uma média simples, invariante a desbalanceamento, enquanto as métricas ponderadas (_weighted_) aumentam o peso de uma classe na métrica final de acordo com a sua representatividade], pois esse é mais robusto ao desbalanceamento.
 
 ]
