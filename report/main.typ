@@ -4,7 +4,7 @@
 #import "sections/related-work.typ": related-work
 #import "sections/threat-model.typ": threat-model
 #import "sections/proposed-system.typ": proposed-system
-#import "sections/our-solution.typ": our-solution
+//#import "sections/our-solution.typ": our-solution
 #import "sections/methodology.typ": methodology
 #import "sections/results-and-discussions.typ": results-and-discussions
 #import "sections/conclusions-and-future-work.typ": conclusions-and-future-work
@@ -22,7 +22,7 @@
 #related-work
 #threat-model
 #proposed-system
-#our-solution
+//#our-solution
 #methodology
 #results-and-discussions
 #conclusions-and-future-work
