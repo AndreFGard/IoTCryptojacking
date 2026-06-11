@@ -142,6 +142,18 @@
 
   Após a divisão, é feita a extração de _features_ nos dados. Utilizando a biblioteca _tsfresh_ são calculadas centenas de característícas matemáticas das duas colunas. Posteriormente, será testado a relevância das novas _features_ contra a classe alvo (_is_malicious_), mantendo apenas as mais relevantes (onde $"p_value" < 0,05$). 
 
+  === Modelo e Tuning de Hiperparâmetros
+
+  Mantivemos o algoritmo *Support Vector Machine* (SVM) para seguir a mesma abordagem do artigo de referência. No entanto, como os dados são diferentes, realizamos um novo processo de tuning de hiperparâmetros.
+
+  Fizemos uma busca em grade (*Grid Search*) usando o conjunto de validação, testando as seguintes combinações:
+  - Custo ($C$): $1$ e $2$;
+  - *Kernel*: Linear, Polinomial, RBF e Sigmoide;
+  - $\gamma$ (Gamma): _Scale_ e _Auto_;
+  - Pesos das classes (_class\_weight_): _Balanced_ e _None_.
+
+  O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca. Ele atua ajustando o peso dos erros de acordo com a frequência de cada classe. Na prática, isso força o modelo a dar a devida atenção aos dados maliciosos, evitando que ele tente atingir uma alta acurácia global simplesmente classificando tudo como benigno.
+  
   == Métricas de avaliação
 
   Para essa seção, utiliza-se as seguintes variáveis:
