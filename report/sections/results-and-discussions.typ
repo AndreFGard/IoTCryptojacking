@@ -11,7 +11,7 @@
   ]
 }
 
-#let result-table(first-col, rows, first-col-width: 2.2fr) = table(
+#let result-table(first-col, rows, first-col-width: 3fr) = table(
   columns: (first-col-width, 1fr, 1fr, 1fr, 1fr, 1fr),
   align: (left, center, center, center, center, center),
   stroke: none,
@@ -145,7 +145,7 @@
 
   No Cenário 1 (@tab:mb2-cenario1), os resultados por dispositivo ficaram dentro de 0.01
   do artigo para Server e Desktop. O servidor continua com acurácia máxima (0.99), pois
-  seu tráfego de mineração binária é o mais volumoso e homogêneo do dataset — mais de
+  seu tráfego de mineração binária é o mais volumoso e homogêneo do dataset, mais de
   1.2 milhões de pacotes maliciosos, gerando features estatísticas altamente
   discriminativas. O dispositivo IoT (Raspberry Pi) apresenta a menor acurácia (0.94),
   reflexo de seus recursos limitados que produzem padrões de mineração menos regulares
@@ -158,13 +158,13 @@
        [Desktop], [0.95], [0.95], [0.95], [0.95], [0.98],
        [IoT], [0.94], [0.94], [0.94], [0.94], [0.98]),
     ),
-    caption: [Resultados — *Cenário 1* _benign-2_],
+    caption: [Resultados da reprodução *Cenário 1* _benign-2_],
   ) <tab:mb2-cenario1>
 
   O Cenário 2 (@tab:mb2-cenario2) avalia estratégias de lucro do atacante via _throttle_.
   Nossos resultados seguem o mesmo padrão qualitativo do artigo: o ataque furtivo (10%)
   obtém a menor acurácia (0.86), enquanto o robusto (50%) supera o agressivo (100%).
-  A queda no modo furtivo é a mais relevante — a 10% de _throttle_, o volume de tráfego
+  A queda no modo furtivo é a mais relevante, a 10% de _throttle_, o volume de tráfego
   gerado se aproxima do tráfego benigno em frequência e tamanho de pacotes, reduzindo a
   separabilidade das classes. A diferença mais acentuada em relação ao artigo ocorre
   justamente nesse cenário (-0.02), o que é coerente com a maior dificuldade de
@@ -177,11 +177,11 @@
        [Robusto (50%)], [0.96], [0.96], [0.96], [0.96], [0.99],
        [Furtivo (10%)], [0.86], [0.87], [0.86], [0.86], [0.93]),
     ),
-    caption: [Resultados — *Cenário 2* _benign-2_],
+    caption: [Resultados da reprodução *Cenário 2* _benign-2_],
   ) <tab:mb2-cenario2>
 
   No Cenário 3 (@tab:mb2-cenario3), os resultados são praticamente idênticos ao artigo.
-  O malware binário (_host-based_) é detectado com maior acurácia que o no-navegador
+  O malware binário (_host-based_) é detectado com maior acurácia que em navegador
   (_in-browser_), confirmando que o tráfego binário é mais volumoso e característico.
   O minerador binário não emprega técnicas de ocultação de rede, gerando padrões
   altamente distinguíveis, o minerador in-browser, por sua vez, limita ativamente o uso
@@ -190,10 +190,10 @@
   #figure(
     result-table(
       [*Tipo*],
-      ([No-navegador (_in-browser_)], [0.96], [0.96], [0.96], [0.96], [0.99],
-       [Binário (_host-based_)], [0.97], [0.97], [0.97], [0.97], [1.00]),
+      ([_In-browser_], [0.96], [0.96], [0.96], [0.96], [0.99],
+       [_Binary_], [0.97], [0.97], [0.97], [0.97], [1.00]),
     ),
-    caption: [Resultados — *Cenário 3* _benign-2_],
+    caption: [Resultados da reprodução *Cenário 3* _benign-2_],
   ) <tab:mb2-cenario3>
 
   Os Cenários 4 a 7 (@tab:mb2-cenarios4a7) avaliam graus de comprometimento da rede
@@ -204,12 +204,12 @@
   #figure(
     result-table(
       [*Cenário*],
-      ([Totalmente comprometida (S4)], [0.95], [0.95], [0.95], [0.95], [0.99],
-       [Parcialmente comprometida (S5)], [0.97], [0.97], [0.97], [0.97], [0.99],
-       [Dispositivo único IoT (S6)], [0.96], [0.96], [0.96], [0.96], [0.99],
-       [IoT comprometida — 2 disp. (S7)], [0.95], [0.95], [0.95], [0.95], [0.99]),
+      ([Fully Compromised], [0.95], [0.95], [0.95], [0.95], [0.99],
+       [Partially Compromised], [0.97], [0.97], [0.97], [0.97], [0.99],
+       [Single Compromised], [0.96], [0.96], [0.96], [0.96], [0.99],
+       [IoT Compromised], [0.95], [0.95], [0.95], [0.95], [0.99]),
     ),
-    caption: [Resultados — *Cenários 4 a 7* _benign-2_],
+    caption: [Resultados da reprodução *Cenários 4 a 7* _benign-2_],
   ) <tab:mb2-cenarios4a7>
 
   === Dataset desbalanceado
