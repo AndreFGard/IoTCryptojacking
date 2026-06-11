@@ -28,7 +28,7 @@
   )
   Para que a execução desses ataques seja possível é necessário considerar algumas premissas:
   - O dispositivo alvo já está comprometido ou é capaz de executar o código malicioso: isso significa que a vítima acessa uma página que carrega _scripts_ de mineração ou que o _malware_ binário consegue ser instalado e executado no sistema;
-  - O dispositivo possui conectividade com a internet e é capaz de estabelecer comunicação com a infraestrutura de mineração: premissa necessária para a comunicação com o servidor remoto ocorrer
-  - Existe infraestrutura externa capaz de coordenar o ataque: seja um provedor externo ou o servidor próprio, sempre é necessário que haja uma entidade coordenando o processo de mineração
+  - O dispositivo possui conectividade com a internet e é capaz de estabelecer comunicação com a infraestrutura de mineração: premissa necessária para a comunicação com o servidor remoto ocorrer;
+  - Existe infraestrutura externa capaz de coordenar o ataque: seja um provedor externo ou o servidor próprio, sempre é necessário que haja uma entidade coordenando o processo de mineração.
   
 ]
