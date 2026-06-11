@@ -250,8 +250,7 @@
   ) <tab:transfer-codigo>
 
   Os resultados da reprodução correspondem aos do artigo em 6 dos 8 experimentos, com
-  diferença máxima de 0.02 em acurácia. Nos dois casos com maior divergência ( Service
-  Provider-1 e Service Provider-2 ) os desvios são de +0.05 e +0.06 em acurácia,
+  diferença máxima de 0.02 em acurácia. Nos dois casos com maior divergência (Service Provider-1 e Service Provider-2) os desvios são de +0.05 e +0.06 em acurácia,
   respectivamente, mas continuam dentro de margem aceitável para reprodução de trabalhos
   com aleatoriedade intrínseca.
 
@@ -308,7 +307,7 @@
       [Sigmoid],[2],[Auto],[0.51],[0.26],[0.51],[0.35],
       table.hline(stroke: 0.5pt),
     ),
-    caption: [Resultados — *Cenário 10*],
+    caption: [Resultados da reprodução *Cenário 10*],
   ) <tab:cenario10>
 
   O padrão qualitativo do artigo é reproduzido com fidelidade: kernels lineares dominam
