@@ -329,8 +329,7 @@
 
   == Resultados no novo conjunto de dados
 
-  Com a reprodução do método de @iotcryptojacking, segundo descrito em #text(fill: red)[SUBSTITUA-ME-POR-REFERENCIA], fizemos um ajuste de hiperparâmetros e selecionamos o melhor modelo. 
-  Utilizar gráficos e tabelas.
+  Com a reprodução do método de @iotcryptojacking no novo _dataset_, @tab:our-svc-tune apresenta os resultados obtidos com a tunagem de hiperparâmetros. 
 
   === Ajuste de Hiperparâmetros
 
@@ -351,13 +350,13 @@
     caption: [Resultados do ajuste de hiperparâmetros do SVM no novo conjunto de dados.],
   ) <tab:our-svc-tune>
 
-  O kernel foi o parâmetro mais determinante para o desempenho do modelo, com RBF e Poly obtendo resultados próximos, apesar de o primeiro treinar mais rápido. O parâmetro C também foi importante, e o peso das classes se mostrou útil para lidar com o desbalanceamento.
+  O kernel foi o parâmetro mais determinante para o desempenho do modelo, com RBF e Poly obtendo resultados próximos, apesar de o primeiro treinar mais rápido. Além disso, o parâmetro C também foi importante, e o peso das classes se mostrou útil para lidar com o desbalanceamento.
 
   === Resultados finais <result_ours>
 
-  A configuração que maximizou o F1 Macro no conjunto de validação foi o SVM com kernel RBF, C=2, gamma=auto e pesos balanceados. Os resultados no conjunto de teste são apresentados em @tab:our-svc-best.
+  A configuração que maximizou o F1 Macro no conjunto de validação foi o SVM com kernel RBF, C=2, gamma=auto e pesos balanceados, sendo ela a escolhida de forma definitiva. Os resultados no conjunto de teste são apresentados em @tab:our-svc-best.
 
-  O modelo obteve desempenho quase perfeito na classe benigna (F1 = 0.99), reflexo do grande volume de amostras benignas disponíveis para treinamento. Para a classe maliciosa, o recall de 0.95 indica que apenas 5% dos ataques não foram detectados, embora a precisão de 88% indique uma quantidade considerável de falsos positivos. O F1 Macro de 0.96 confirma que o modelo equilibra bem as duas classes, apesar do desbalanceamento acentuado. Portanto, pode-se concluir que o desempenho do modelo foi satisfatório
+  O modelo obteve desempenho quase perfeito na classe benigna (F1 = 0.99), reflexo do grande volume de amostras benignas disponíveis para treinamento. Para a classe maliciosa, o recall de 0.95 indica que apenas 5% dos ataques não foram detectados, embora a precisão de 88% indique uma quantidade considerável de falsos positivos. O F1 Macro de 0.96 confirma que o modelo equilibra bem as duas classes, apesar do desbalanceamento acentuado. Portanto, pode-se concluir que o desempenho do modelo foi satisfatório.
 
   #figure(
     table(
@@ -370,15 +369,34 @@
       [Benigno],         [0.99], [0.99], [0.99], [30.456],
       [Malicioso],       [0.88], [0.95], [0.91], [540],
       table.hline(stroke: 0.5pt),
-      [*Macro avg*],     [*0.94*], [*0.97*], [*0.96*], [30.996],
-      [*Weighted avg*],  [1.00], [1.00], [1.00], [30.996],
+      [*Média Macro*],     [*0.94*], [*0.97*], [*0.96*], [30.996],
+      [*Média Ponderada*],  [1.00], [1.00], [1.00], [30.996],
       table.hline(stroke: 0.5pt),
     ),
     caption: [Relatório de classificação do melhor SVM (RBF, C=2, gamma=auto, pesos balanceados) no conjunto de teste do novo dataset.],
   ) <tab:our-svc-best>
 
+  Em @tab:vpn_acc_mali, vemos que as VPNs são uma ferramenta de obfuscação de _cryptojacking_ com efetividade considerável, aumentando a dificuldade de classificação dos pacotes maliciosos.
+#figure(
+    {
+      let data = csv("../data/vpn_to_acc_mali.csv")
+      table(
+        columns: (auto, auto, auto, auto),
+        align: (center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Acurácia e erro na classe maligna por VPN],
+  ) <tab:vpn_acc_mali>
+
+
   === Discussão
-  Os resultados descritos acima ilustram o desafio não só de treinar, mas especialmente de avaliar dados com um desabalanceamento tão grande quanto o em questão. É evidente que a média ponderada de qualquer métrica é enganosa em casos como este, enquanto a simples consegue preservar um significado relevante. Ademais, o dataset descrito em 
+  Os resultados descritos acima ilustram o desafio não só de treinar, mas especialmente de avaliar dados com um desabalanceamento tão grande quanto o em questão. É evidente que a média ponderada de qualquer métrica é enganosa em casos como este, enquanto a simples ilustrou melhor o cenário geral do desempenho do modelo. Ademais, este _dataset_ se mostrou mais desafiador que o apresentado em @iotcryptojacking, apesar de ter sido coletado em dispositivos mais poderosos.
 
   //Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
 

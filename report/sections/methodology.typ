@@ -19,13 +19,13 @@
 
   == Dados usados pelo artigo de referência
 
-  #todo(done: true)[ Por que eles foram escolhidos? O que eles representam?]
+  // #todo(done: true)[ Por que eles foram escolhidos? O que eles representam?]
 
-  #todo(done: true)[ Como os conjuntos de treino, validação e teste foram formados? ]
+  // #todo(done: true)[ Como os conjuntos de treino, validação e teste foram formados? ]
 
-  #todo()[ Há quantos dados em cada classe nos conjuntos de treino, validação e teste? ]
+  // #todo()[ Há quantos dados em cada classe nos conjuntos de treino, validação e teste? ]
 
-  #todo(done: true)[ Quais foram os dados usados para avaliar o sistema proposto?]
+  // #todo(done: true)[ Quais foram os dados usados para avaliar o sistema proposto?]
 
   Os dados utilizados e desenvolvidos em @iotcryptojacking contém colunas associadas a coleta de dados, mas, para fins de treinamento, somente o tempo entre pacotes e o tamanho deles é considerado.
 
@@ -112,7 +112,7 @@
 
   O _dataset_ foi escolhido por se encaixar perfeitamente na proposta do artigo de referência, tendo sido fornecidos ao modelo apenas as _features_ de tempo e tamanho do pacote, mas com uma variedade extra que enriquece a avaliação. Além disso, a inclusão de tráfego afetado por VPNs, uma técnica de obfuscação de tráfego não considerada anteriormente, também avalia a robustez do sistema proposto.
 
-  == Preprocessamento
+  == Preprocessamento <metodol_ours>
 
   Inicialmente, os dados são agrupados baseados na sua fonte ("_activity_") e no tipo de VPN, se presente, distribuindo as classes igualmente entre os _splits_. Em seguida, dentro de cada grupo, são criadas janelas com o mesmo tamanho usado em @iotcryptojacking. Após esse processamento, elas são divididas sequencialmente em conjuntos de treino, validação e teste, evitando vazamento temporal de dados. Então, os respectivos conjuntos dos grupos são unidos, e @tab:divisao-dados-split-novo mostra a distribuição exata desses dados.
 
@@ -138,11 +138,11 @@
 
   === Extração de Features
 
-  Após a divisão, é feita a extração de _features_ nos dados. Como em @iotcryptojacking, usou-se a biblioteca _tsfresh_, que calcula centenas de característícas das duas colunas. Posteriormente, é testada a relevância das novas _features_ contra a classe alvo (_is_malicious_), mantendo apenas as mais relevantes (onde $"p_value" < 0,05$).
+  Após a divisão, é feita a extração de _features_ nos dados. Como em @iotcryptojacking, usou-se a biblioteca _tsfresh_, que calcula centenas de característícas das duas colunas. Posteriormente, é testada a relevância das novas _features_ para a maliciosidade, mantendo apenas as mais relevantes (onde $"p_value" < 0,05$). Desta forma, foram selecionadas 416 features.
 
   === Modelo e Tuning de Hiperparâmetros
 
-  Mantivemos o algoritmo Support Vector Machine (SVM) para seguir a mesma abordagem do artigo de referência. No entanto, como os dados são diferentes, realizamos um novo processo de tuning de hiperparâmetros.
+  Mantivemos o uso de SVM para seguir a mesma abordagem do artigo de referência. No entanto, como os dados são diferentes, realizamos um novo processo de tunagem de hiperparâmetros.
 
   Fizemos uma busca em grade usando o conjunto de validação, testando as seguintes combinações:
   - C: $1$ e $2$;
