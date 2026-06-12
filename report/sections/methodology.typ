@@ -15,8 +15,6 @@
 #let methodology = [
   = Metodologia
 
-  Descrever os dados e métricas utilizados para validar as soluções propostas e quais os experimentos realizados. Sobre os dados, descrever:
-
   == Dados usados pelo artigo de referência
 
   // #todo(done: true)[ Por que eles foram escolhidos? O que eles representam?]
@@ -85,7 +83,7 @@
   //tabela com a quantidade de dados por classe em treino,teste (lembrar de reforçar que usa cross validation)
 
   === Preprocessamento
-  Foram criadas janelas de 10 pacotes e sem sobreposição. Então, uma biblioteca@tsfresh foi usada para extrair centenas de características automaticamente, as quais são selecionadas com base numa tabela de relevância. Depois, as janelas são separadas em treino e teste aleatoriamente, e _Cross-Validation_ é usada quando necessário. No entanto, é importante destacar que, na maioria dos cenários, o cálculo da relevância é feito antes da separação dos dados, o que representa um risco de vazamento de dados.
+  Foram criadas janelas de 10 pacotes e sem sobreposição. Então, a biblioteca _tsfresh_ @tsfresh foi usada para extrair centenas de características automaticamente, as quais são selecionadas com base numa tabela de relevância. Depois, as janelas são separadas em treino e teste aleatoriamente, e _Cross-Validation_ é usada quando necessário. No entanto, é importante destacar que, na maioria dos cenários, o cálculo da relevância é feito antes da separação dos dados, o que representa um risco de vazamento de dados.
 
   A @tab:divisao-dados-split apresenta a quantidade de pacotes e janelas por classe, bem como o n. de janelas por split. Os dados benignos são consideravelmente maiores, e o desbalanceamento aumenta ainda mais nos estudos em que os tipos e estratégias de ataque são separados.
 
@@ -111,7 +109,7 @@
 
   == Novo conjunto de dados escolhido
 
-  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_" (CNT21), disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre tráfego de entrada e saída, e também há variações com VPNs e sem.
+  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_" (CNT21) @CNT21, disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre tráfego de entrada e saída, e também há variações com VPNs e sem.
 
   Adicionalmente, todo o tráfego de criptomoedas está dividido em _full node_ (ou seja, um servidor que armazena o histórico completo da blockchain e valida transações de forma independente) e _miner_ (que contém o tráfego gerado pela mineração delas). O tráfego do _full node_ foge do escopo de _cryptojacking_ em dispositivos IoT, e portanto foi utilizado apenas os conjuntos do _miner_ para a avaliação do modelo, os quais foram rotulados como malignos.
 
@@ -168,6 +166,6 @@
   - Gamma: Scale e Auto;
   - Pesos das classes (_class\_weight_): Balanced e None.
 
-  O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro `class_weight="balanced"` na busca, ajustando o peso das classes de forma a amenizar os efeitos da super-representação de uma classe. Nesse sentido, o uso do F1 Macro ao invés do F1 Ponderado também é crucial#footnote[Uma métrica Macro, como o F1 Macro, une o F1 de ambas as classes com uma média simples, invariante a desbalanceamento, enquanto as métricas ponderadas (_weighted_) aumentam o peso de uma classe na métrica final de acordo com a sua representatividade], pois esse é mais robusto ao desbalanceamento.
+  O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro class_weight="balanced" na busca, ajustando o peso das classes de forma a amenizar os efeitos da super-representação de uma classe. Nesse sentido, o uso do F1 Macro ao invés do F1 Ponderado também é crucial#footnote[Uma métrica Macro, como o F1 Macro, une o F1 de ambas as classes com uma média simples, invariante a desbalanceamento, enquanto as métricas ponderadas (_weighted_) aumentam o peso de uma classe na métrica final de acordo com a sua representatividade], pois esse é mais robusto ao desbalanceamento.
 
 ]
