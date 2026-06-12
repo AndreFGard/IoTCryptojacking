@@ -109,7 +109,7 @@
 
   == Novo conjunto de dados escolhido
 
-  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_" (CNT21) @CNT21, disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre tráfego de entrada e saída, e também há variações com VPNs e sem.
+  O novo conjunto de dados foi o "_Cryptojacking Network Traffic 2021_"@cnt21 (CNT21), disponibilizado publicamente pela Mendeley Data. O conjunto contém diversos fluxos de rede com exemplos de tráfego usual (usando aplicativos como _Youtube_, _Skype_ e serviços _Office_) e causado por criptomoedas (_Bitcoin_, _Bytecoin_ e _Monero_). Todos os fluxos são divididos entre tráfego de entrada e saída, e também há variações com VPNs e sem.
 
   Adicionalmente, todo o tráfego de criptomoedas está dividido em _full node_ (ou seja, um servidor que armazena o histórico completo da blockchain e valida transações de forma independente) e _miner_ (que contém o tráfego gerado pela mineração delas). O tráfego do _full node_ foge do escopo de _cryptojacking_ em dispositivos IoT, e portanto foi utilizado apenas os conjuntos do _miner_ para a avaliação do modelo, os quais foram rotulados como malignos.
 
@@ -130,7 +130,7 @@
 
   == Preprocessamento <metodol_ours>
 
-  Inicialmente, os dados são agrupados baseados na sua fonte ("_activity_") e no tipo de VPN, se presente, distribuindo as classes igualmente entre os _splits_. Em seguida, dentro de cada grupo, são criadas janelas com o mesmo tamanho usado em @iotcryptojacking. Após esse processamento, elas são divididas sequencialmente em conjuntos de treino, validação e teste, evitando vazamento temporal de dados. Então, os respectivos conjuntos dos grupos são unidos, e @tab:divisao-dados-split-novo mostra a distribuição exata desses dados.
+  Inicialmente, os dados são agrupados baseados na sua fonte (_activity_) e no tipo de VPN, se presente, distribuindo as classes igualmente entre os _splits_. Em seguida, dentro de cada grupo, são criadas janelas com o mesmo tamanho usado em @iotcryptojacking. Após esse processamento, elas são divididas sequencialmente em conjuntos de treino, validação e teste, evitando vazamento temporal de dados. Então, os respectivos conjuntos dos grupos são unidos, e @tab:divisao-dados-split-novo mostra a distribuição exata desses dados.
 
   #figure(
     {

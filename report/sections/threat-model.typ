@@ -12,7 +12,7 @@
   === Pelo navegador
   nessa modalidade os atacantes se aproveitam das vulnerabilidades que páginas _web_ possuem quanto à injeção de código malicioso, permitindo que o _script_ fornecido seja executado enquanto a aplicação (geralmente, páginas de conteúdo pirata) for usada. Para a geração do dataset foi criada uma página _WordPress_ que executava _scripts_ de diferentes provedores (como _Webmine.io_ e _WebminePool_) em suas páginas.
 
-  === Baseado em _host_
+  === Baseado em host
   aqui, o programa de mineração é inserido diretamente no dispositivo do _host_ para executar o _malware_, tipicamente permitindo maior uso do poder computacional do usuário, visto que o _malware_ está embutido na máquina. Para a geração do _dataset_, o minerador _MinerGate_ foi baixado nos dispositivos.
 
   Também é possível disinguí-los pela fonte do minerador:

@@ -18,6 +18,10 @@
   bibliography: bibliography("refs.bib"),
 )
 
+#set figure(
+  supplement: [Tabela]
+)
+
 #introduction
 #related-work
 #threat-model
