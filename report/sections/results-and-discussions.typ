@@ -26,7 +26,7 @@
   = Resultados e discussões
 
   == Resultados da reprodução do artigo de referência
-  Nesta subseção reproduzimos o pipeline de treinamento do artigo de @iotcryptojacking usando o mesmo dataset, as mesmas métricas e a mesma divisão entre treino e teste. A implementação foi preservada em termos de comportamento, mas executada em uma estrutura mais adequada para _cluster_ e análise reprodutível.
+  Nesta subseção reproduzimos @gitprojeto o pipeline de treinamento do artigo de @iotcryptojacking usando o mesmo dataset, as mesmas métricas e a mesma divisão entre treino e teste. A implementação foi preservada em termos de comportamento, mas executada em uma estrutura mais adequada para _cluster_ e análise reprodutível.
 
   Os resultados foram organizados em três blocos: desempenho geral dos classificadores, sensibilidade ao comportamento do atacante e sensibilidade ao grau de comprometimento da rede. Os modelos utilizados são _Logistic Regression_ (LogReg), _K-Nearest Neighbors_ (KNN), _Support Vector Machine_ (SVM) e _Gaussian Naive Bayes_ (GNB), com 75% dos dados para treino, 25% para teste, _5-fold cross-validation_ e parâmetros padrão do scikit-learn. A partir do Cenário 1, analisamos apenas os resultados do SVM, como no artigo original.
 
