@@ -376,7 +376,7 @@
     caption: [Relatório de classificação do melhor SVM (RBF, C=2, gamma=auto, pesos balanceados) no conjunto de teste do novo dataset.],
   ) <tab:our-svc-best>
 
-  Em @tab:vpn_acc_mali, vemos que as VPNs são uma ferramenta de obfuscação de _cryptojacking_ com efetividade considerável, aumentando a dificuldade de classificação dos pacotes maliciosos.
+  Em @tab:vpn_acc_mali, vemos que as VPNs são uma ferramenta de obfuscação de _cryptojacking_ com efetividade considerável, aumentando a dificuldade de classificação dos pacotes maliciosos, diminuindo a acurácia na classe maligna em até 9%.
 #figure(
     {
       let data = csv("../data/vpn_to_acc_mali.csv")

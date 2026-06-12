@@ -15,7 +15,7 @@
   === Baseado em host
   aqui, o programa de mineração é inserido diretamente no dispositivo do _host_ para executar o _malware_, tipicamente permitindo maior uso do poder computacional do usuário, visto que o _malware_ está embutido na máquina. Para a geração do _dataset_, o minerador _MinerGate_ foi baixado nos dispositivos.
 
-  Também é possível disinguí-los pela fonte do minerador:
+  Também é possível distinguí-los pela fonte do minerador:
 
   === Via provedor de serviço
   nesse caso, é usado um serviço feito por terceiros que administra a distribuição de tarefas e recompensas. É consideravelmente mais fácil de usar porém não deixa o atacante controlar completamente seu ataque, e fornece menor anonimidade. Serviços como _Webmine_ foram usados na captura dos dados.

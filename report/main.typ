@@ -12,7 +12,7 @@
 #show bibliography: set std.bibliography(title: text(10pt)[Referências])
 
 #show: ieee.with(
-  title: [A Lightweight IoT Cryptojacking Detection Mechanism in Heterogeneous Smart Home Networks],
+  title: [Uma reprodução de Lightweight IoT Cryptojacking Detection Mechanism in Heterogeneous Smart Home Networks],
   abstract: abstract,
   authors: yaml("authors.yml"),
   bibliography: bibliography("refs.bib"),

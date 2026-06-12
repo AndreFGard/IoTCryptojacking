@@ -82,7 +82,7 @@
 
   //tabela com a quantidade de dados por classe em treino,teste (lembrar de reforçar que usa cross validation)
 
-  === Preprocessamento
+  === Preprocessamento <preprocessamento-deles>
   Foram criadas janelas de 10 pacotes e sem sobreposição. Então, a biblioteca _tsfresh_ @tsfresh foi usada para extrair centenas de características automaticamente, as quais são selecionadas com base numa tabela de relevância. Depois, as janelas são separadas em treino e teste aleatoriamente, e _Cross-Validation_ é usada quando necessário. No entanto, é importante destacar que, na maioria dos cenários, o cálculo da relevância é feito antes da separação dos dados, o que representa um risco de vazamento de dados.
 
   A @tab:divisao-dados-split apresenta a quantidade de pacotes e janelas por classe, bem como o n. de janelas por split. Os dados benignos são consideravelmente maiores, e o desbalanceamento aumenta ainda mais nos estudos em que os tipos e estratégias de ataque são separados.
@@ -154,7 +154,7 @@
 
   === Extração de Features
 
-  Após a divisão, é feita a extração de _features_ nos dados. Como em @iotcryptojacking, usou-se a biblioteca _tsfresh_, que calcula centenas de característícas das duas colunas. Posteriormente, é testada a relevância das novas _features_ para a maliciosidade, mantendo apenas as mais relevantes (onde $"p_value" < 0,05$). Desta forma, foram selecionadas 416 features.
+  Após a divisão, é feita a extração de _features_ nos dados. Como em @iotcryptojacking, usou-se a biblioteca _tsfresh_, que calcula centenas de característícas das duas colunas. Posteriormente, é testada a relevância das novas _features_ para a maliciosidade, utilizando exclusivamente os dados de treino, mantendo apenas as mais relevantes (onde $"p_value" < 0,05$). Desta forma, foram selecionadas 416 features.
 
   === Modelo e Tuning de Hiperparâmetros
 
