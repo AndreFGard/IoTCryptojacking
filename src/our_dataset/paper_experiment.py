@@ -7,7 +7,8 @@ from functools import partial
 from typing import Any, Callable, cast, Literal
 import pandas as pd
 from sklearn.svm import SVC, LinearSVC
-from sklearn.metrics import classification_report, f1_score
+from sklearn.model_selection import ParameterGrid
+from sklearn.metrics import classification_report, f1_score, precision_score, recall_score
 from joblib import Parallel, delayed
 
 from our_dataset import dataset, transforms
@@ -121,23 +122,13 @@ def tune_svc(
     val: pd.DataFrame,
     test: pd.DataFrame,
     selected_features: list[str],
+    param_grids: list[dict[str, list[Any]]],
     out_dir: str | pathlib.Path = "data/ours/",
 ) -> pd.DataFrame:
-    import itertools
-
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    C_values = [1, 2]
-    kernels: list[Literal["linear", "poly", "rbf", "sigmoid"]] = [
-        "linear",
-        "poly",
-        "rbf",
-        "sigmoid",
-    ]
-    gammas: list[Literal["scale", "auto"]] = ["scale", "auto"]
-    class_weights = ["balanced", None]
-
+    
     train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
     train_y = train["is_malicious"]
     val_x = cast(pd.DataFrame, val[selected_features].fillna(0.0))
@@ -148,35 +139,13 @@ def tune_svc(
     results = []
     logging.info("Starting SVC hyperparameter tuning...")
 
-    for C, kernel, gamma, class_weight in itertools.product(
-        C_values, kernels, gammas, class_weights
-    ):
-        params = [C, kernel, gamma, class_weight]
-        comb_name = f"SVC - {' - '.join(map(str, params))}"
+    for params in ParameterGrid(param_grids):
+        C = params["C"]
+        kernel = params["kernel"]
+        gamma = params.get("gamma", "scale")
+        class_weight = params.get("class_weight", None)
 
-        # If kernel is linear, gamma is ignored. To avoid duplicate training,
-        # we copy the result of gamma == 'scale' when gamma == 'auto' is processed.
-        if kernel == "linear" and gamma == "auto":
-            prev_comb = f"SVC - {C} - linear - scale - {class_weight}"
-            prev_res = next(
-                (r for r in results if r["combination_name"] == prev_comb), None
-            )
-            if prev_res is not None:
-                results.append(
-                    {
-                        "combination_name": comb_name,
-                        "C": C,
-                        "kernel": kernel,
-                        "gamma": gamma,
-                        "val_f1_macro": prev_res["val_f1_macro"],
-                        "test_f1_macro": prev_res["test_f1_macro"],
-                        "class_weight": class_weight,
-                    }
-                )
-                logging.info(
-                    f"{comb_name} - Val F1 Macro: {prev_res['val_f1_macro']:.4f} | Test F1 Macro: {prev_res['test_f1_macro']:.4f} (copied from scale)"
-                )
-                continue
+        comb_name = f"SVC - {C} - {kernel} - {gamma} - {class_weight}"
 
         logging.info(f"Training {comb_name}...")
 
@@ -202,9 +171,13 @@ def tune_svc(
 
         val_preds = model.predict(val_x)
         val_f1 = f1_score(val_y, val_preds, average="macro")
+        val_prec = precision_score(val_y, val_preds, average="macro")
+        val_rec = recall_score(val_y, val_preds, average="macro")
 
         test_preds = model.predict(test_x)
         test_f1 = f1_score(test_y, test_preds, average="macro")
+        test_prec = precision_score(test_y, test_preds, average="macro")
+        test_rec = recall_score(test_y, test_preds, average="macro")
 
         res_d = {
             "combination_name": comb_name,
@@ -213,7 +186,11 @@ def tune_svc(
             "gamma": gamma,
             "class_weight": class_weight,
             "val_f1_macro": val_f1,
+            "val_precision_macro": val_prec,
+            "val_recall_macro": val_rec,
             "test_f1_macro": test_f1,
+            "test_precision_macro": test_prec,
+            "test_recall_macro": test_rec,
         }
         results.append(res_d)
         logging.info(f"{comb_name} - {res_d}")
@@ -276,8 +253,23 @@ def main():
         "pycatch22", pycatch22_fn, SVC()
     )
 
+    param_grids = [
+        {
+            "C": [1, 2],
+            "kernel": ["linear"],
+            "gamma": ["scale"],
+            "class_weight": ["balanced", None],
+        },
+        {
+            "C": [1, 2],
+            "kernel": ["poly", "rbf", "sigmoid"],
+            "gamma": ["scale", "auto"],
+            "class_weight": ["balanced", None],
+        },
+    ]
+
     # Run hyperparameter tuning on the dataset splits
-    tune_svc(train, val, test, selected_features)
+    tune_svc(train, val, test, selected_features, param_grids=param_grids)
 
     logging.info("All experiments finished.")
 
