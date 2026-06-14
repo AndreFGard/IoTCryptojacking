@@ -268,12 +268,12 @@ def main():
     dataset_df = ds.df
 
     tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
-    pipeline_pycatch22 = partial(
+    pycatch22_fn = partial(
         transforms.pipeline_pycatch22, window_size=10, overlap=0
     )
 
     _, train, val, test, selected_features, _ = run_experiment(
-        "tsfresh", tsfresh_fn, SVC()
+        "pycatch22", pycatch22_fn, SVC()
     )
 
     # Run hyperparameter tuning on the dataset splits
