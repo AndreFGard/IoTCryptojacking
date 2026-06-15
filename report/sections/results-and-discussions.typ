@@ -258,7 +258,7 @@
   acurácia reflete uma distribuição ligeiramente distinta dos exemplos de teste, não uma
   degradação do modelo. Esses dois experimentos envolvem os únicos cenários com tráfego
   real de serviço de pool (_WebminePool_ e _Webmine Aggressive_), cujas janelas de 10
-  pacotes geradas pelo tsfresh são sensíveis à ordem de chegada dos pacotes, pequenas
+  pacotes geradas pelo _Tsfresh_ são sensíveis à ordem de chegada dos pacotes, pequenas
   diferenças de versão de biblioteca ou de ordenação interna do dataset já justificam
   os desvios observados.
 
@@ -400,7 +400,143 @@
 
   //Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
 
-  // == Resultados proposta de melhoria do artigo de referência (CASO FEITA)
+  == Resultados das propostas de melhoria do artigo
+
+  === No dataset original
+
+  Tendo em vista o desempenho satisfatório da metodologia original na maioria dos cenários, optou-se por avaliar as propostas de melhoria nos cenários mais desafiadores, que são o S2 (Furtivo e Robusto), S6 (IoT único) e S7 (IoT + IoT) @iotcryptojacking.
+
+  A @tab:delta_paper compara o F1 Macro do pipeline original (SVM com _Tsfresh_, 5-fold CV) com o melhor resultado obtido com a proposta de melhoria em cada cenário, no conjunto de teste.
+
+  #figure(
+    table(
+      columns: (3fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header(
+        [*Cenário*],
+        [*F1 Original*],
+        [*F1 SVM Novo*],
+        [*Δ SVM Novo*],
+        [*F1 RF*],
+        [*Δ RF*],
+      ),
+      table.hline(y: 1, stroke: 0.5pt),
+      [S2 Furtivo (10%)],   [0.91], [0.91], [+0.00], [0.91], [+0.00],
+      [S2 Robusto (50%)],   [0.81], [0.85], [*+0.04*], [0.88], [*+0.07*],
+      [S6 (Single IoT)],    [0.91], [0.91], [+0.00], [0.93], [*+0.02*],
+      [S7 (IoT + IoT)],     [0.90], [0.91], [+0.01], [0.92], [*+0.02*],
+      table.hline(stroke: 0.5pt),
+    ),
+    caption: [Comparação do F1 Macro entre o pipeline original e a proposta de melhoria no dataset do artigo de referência],
+  ) <tab:delta_paper>
+
+  O ganho mais expressivo ocorre no cenário S2 Robusto, que antes havia sido o mais desafiador. Neste, o SVM com _Pycatch22_ supera o pipeline original em 4%, e o _RandomForest_ em 7%. Nos demais cenários, os modelos atingem desempenho equivalente ou ligeiramente superior ao original, com o _RandomForest_ predominantemente superior ao SVM.
+
+
+  As @tab:best_tunes_svc_paper e @tab:best_tunes_rf_paper apresentam a melhor configuração de hiperparâmetros por cenário no dataset do artigo de referência, com resultados alinhados aos observados anteriormente quanto ao efeito dos parâmetros do SVM.
+
+  #figure(
+    {
+      let data = csv("../data/paper/best_tune_per_scenario_svc.csv")
+      table(
+        columns: (auto, auto, auto, auto, auto, auto, auto, auto),
+        align: (left, center, center, center, center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Melhor configuração de SVM por cenário no dataset original],
+  ) <tab:best_tunes_svc_paper>
+
+  #figure(
+    {
+      let data = csv("../data/paper/best_tune_per_scenario_rf.csv")
+      table(
+        columns: (auto, auto, auto, auto, auto, auto, auto, auto),
+        align: (left, center, center, center, center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Melhor configuração de _RandomForest_ por cenário no dataset original],
+  ) <tab:best_tunes_rf_paper>
+
+  === No novo dataset
+
+  Ao contrário do observado no dataset original, as alterações propostas não foram benéficas no dataset novo, com perda de 5% no F1 Macro em relação ao pipeline original com _Tsfresh_. No entanto, o tempo de treinamento foi reduzido drasticamente, de \~200 para \~40 segundos. Ademais, com apenas 44 características ao invés de 416, a execução em ambiente com recursos restritos se torna mais fácil.
+
+  A @tab:delta_ours resume o impacto da mudança de metodologia no novo dataset.
+
+  #figure(
+    table(
+      columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+      align: (left, center, center, center, center, center),
+      stroke: none,
+      table.hline(y: 0, stroke: 0.5pt),
+      table.header(
+        [*Dataset*],
+        [*F1 Original*],
+        [*F1 SVM Novo*],
+        [*Δ SVM Novo*],
+        [*F1 RF*],
+        [*Δ RF*],
+      ),
+      table.hline(y: 1, stroke: 0.5pt),
+      [Novo dataset], [0.96], [0.91], [-0.05], [0.91], [-0.05],
+      table.hline(stroke: 0.5pt),
+    ),
+    caption: [Comparação do F1 Macro entre o pipeline original (_Tsfresh_, SVM) e a proposta de melhoria (_Pycatch22_) no novo dataset],
+  ) <tab:delta_ours>
+
+  O _RandomForest_ com _Pycatch22_ obteve desempenho equivalente ao SVM com treino quase instantâneo (~7 s contra ~40 s), mas ambos ficaram 5% abaixo do SVM original com _Tsfresh_. Ainda assim, o _Pycatch22_, assim como o _RandomForest_, se mostram promissores para estudos futuros.
+
+  As @tab:rf_pycatch22_ours e @tab:svc_pycatch22_ours apresentam a tunagem completa no novo dataset. Percebe-se que o balanceamento de classes foi o parâmetro determinante para o _RandomForest_. Apesar disso, este não foi positivo para o SVM, contrastando com os resultados anteriores, além de ter aumentado o tempo de treino. Neste caso, o Kernel foi o parâmetro mais importante, com uma distribuição de Kernel x Desempenho muito similar à apresentada anteriormente. 
+
+  #figure(
+    {
+      let data = csv("../data/our_pycatch22_rf_tune_results.csv")
+      table(
+        columns: (auto, auto, auto, auto, auto, auto, auto),
+        align: (center, center, center, center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Tunagem de parâmetros de _RandomForest_ no novo dataset],
+  ) <tab:rf_pycatch22_ours>
+
+  #figure(
+
+    placement:bottom,
+    {
+      let data = csv("../data/our_pycatch22_svc_tune_results.csv")
+      table(
+        columns: (auto, auto, auto, auto, auto, auto, auto),
+        align: (center, center, center, center, center, center, center),
+        stroke: none,
+        table.hline(y: 0, stroke: 0.5pt),
+        table.header(..data.at(0).map(x => [*#x*])),
+        table.hline(y: 1, stroke: 0.5pt),
+        ..data.slice(1).flatten().map(x => x),
+        table.hline(stroke: 0.5pt),
+      )
+    },
+    caption: [Tunagem de parâmetros de SVM no novo dataset],
+  ) <tab:svc_pycatch22_ours>
 
   // - Nos dados usados pelo artigo de referência
   // - No novo conjunto de dados escolhido
@@ -412,3 +548,5 @@
   // == discussões
   // - apontar os erros q percebemos no artiigp
 ]
+
+

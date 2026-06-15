@@ -43,11 +43,12 @@ def main():
             factories=factories,
             prefix=scenario,
         )
+        df["scenario"] = scenario
         if final_df is not None:
-            final_df = pd.concat([final_df,df])
-            final_df.to_csv("data/paper/""paper_experiment_tune.csv",index=False)
-
-        else:final_df = df
+            final_df = pd.concat([final_df, df])
+        else:
+            final_df = df
+        final_df.to_csv("data/paper/paper_experiment_tune.csv", index=False)
     
 
 

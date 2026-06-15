@@ -1,0 +1,5 @@
+Cenário,Kernel,C,Gamma,Pesos,F1 Macro (Val),F1 Macro (Test),Tempo (s)
+S2 Discreto,Poly,2,Scale,Balanceado,0.97,0.89,0
+S2 Robusto,RBF,2,Scale,-,0.74,0.85,0
+S6 (Single IoT),RBF,2,Scale,Balanceado,0.97,0.91,0
+S7 (IoT + IoT),RBF,2,Auto,Balanceado,0.93,0.91,2

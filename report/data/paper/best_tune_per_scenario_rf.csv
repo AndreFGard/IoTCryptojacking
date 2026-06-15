@@ -1,0 +1,5 @@
+Cenário,Estim.,Prof.,Min. Split,Pesos,F1 Macro (Val),F1 Macro (Test),Tempo (s)
+S2 Discreto,50,10,2,Bal. Subsample,0.95,0.92,0
+S2 Robusto,50,-,2,-,0.83,0.86,1
+S6 (Single IoT),100,-,2,Bal. Subsample,0.97,0.92,1
+S7 (IoT + IoT),200,-,5,Bal. Subsample,0.92,0.92,0
