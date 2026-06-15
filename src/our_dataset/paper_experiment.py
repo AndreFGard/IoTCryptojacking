@@ -127,6 +127,11 @@ def main():
     test_y = test["is_malicious"]
 
     all_dfs = []
+    out_dir = pathlib.Path("data/ours/")
+    out_dir.mkdir(exist_ok=True, parents=True)
+    out_path = (
+        out_dir / f"tune_result_{datetime.datetime.now().strftime('%d-%m-%y_%H:%M')}.csv"
+    )
     for factory in factories:
         df_results = tune_model(
             factory.make_model,
@@ -140,15 +145,9 @@ def main():
         )
         all_dfs.append(df_results)
 
-    final_df = pd.concat(all_dfs, ignore_index=True)
-    final_df = final_df.sort_values("val_f1_macro")
-
-    out_dir = pathlib.Path("data/ours/")
-    out_dir.mkdir(exist_ok=True, parents=True)
-    out_path = (
-        out_dir / f"tune_result_{datetime.datetime.now().strftime('%d-%m-%y_%H:%M')}.csv"
-    )
-    final_df.to_csv(out_path, index=False)
+        final_df = pd.concat(all_dfs, ignore_index=True)
+        final_df = final_df.sort_values("val_f1_macro")
+        final_df.to_csv(out_path, index=False)
     logging.info(f"Tuning finished. Results saved to {out_path}")
 
     best_row = final_df.iloc[-1]
