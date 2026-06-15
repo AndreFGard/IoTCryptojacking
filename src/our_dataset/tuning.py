@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, Callable
 import pandas as pd
 from sklearn.model_selection import ParameterGrid
@@ -56,6 +57,7 @@ def tune_model(
             "test_f1_macro": test_f1,
             "test_precision_macro": test_prec,
             "test_recall_macro": test_rec,
+            "time": int(time.time())
         }
 
         results.append(res_d)
