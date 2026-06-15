@@ -21,37 +21,34 @@ def configure_logging() -> None:
 def main():
     global dataset_df
     configure_logging()
-    parser = argparse.ArgumentParser(description="Reference paper's experiment runner")
-    parser.add_argument(
-        "--scenario",
-        type=str,
-        default="s2_thr10",
-        choices=["s2_thr10", "s2_thr50", "s6_single_iot", "s7_iot_iot"],
-        help="The scenario slug to load and evaluate.",
-    )
-    args = parser.parse_args()
+    final_df:pd.DataFrame|None = None
+    for scenario in ["s2_thr10", "s2_thr50", "s6_single_iot", "s7_iot_iot"]:
+        logging.basicConfig(level=logging.INFO)
+        logging.info(f"Starting reference paper's experiment runner for scenario: {scenario}...")
+        dataset_df = load_paper_dataframe(scenario=scenario)
 
-    logging.basicConfig(level=logging.INFO)
-    logging.info(f"Starting reference paper's experiment runner for scenario: {args.scenario}...")
-    dataset_df = load_paper_dataframe(scenario=args.scenario)
+        pipeline_obj = PipelinePaperPycatch22(
+            dataset_df, window_size=10, overlap=0, scenario=scenario
+        )
 
-    pipeline_obj = PipelinePaperPycatch22(
-        dataset_df, window_size=10, overlap=0, scenario=args.scenario
-    )
+        train, val, test, selected_features = pipeline_obj.load_cache_or_run("data/paper/")
 
-    train, val, test, selected_features = pipeline_obj.load_cache_or_run("data/paper/")
+        factories = [SVCFactory(), RandomForestFactory()]
+        df = run_experiment(
+            train=train,
+            val=val,
+            test=test,
+            selected_features=selected_features,
+            output_dir="data/paper/",
+            factories=factories,
+            prefix=scenario,
+        )
+        if final_df is not None:
+            final_df = pd.concat([final_df,df])
+            final_df.to_csv("data/paper/""paper_experiment_tune.csv",index=False)
 
-    factories = [SVCFactory(), RandomForestFactory()]
-
-    run_experiment(
-        train=train,
-        val=val,
-        test=test,
-        selected_features=selected_features,
-        output_dir="data/paper/",
-        factories=factories,
-        prefix=args.scenario,
-    )
+        else:final_df = df
+    
 
 
 if __name__ == "__main__":

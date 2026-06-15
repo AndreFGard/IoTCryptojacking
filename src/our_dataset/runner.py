@@ -25,7 +25,7 @@ def run_experiment(
     output_dir: str | pathlib.Path,
     factories: list,
     prefix: str = "",
-) -> None:
+) -> pd.DataFrame:
     """
     Generic runner to tune model factories on provided dataset splits and log/save results.
     """
@@ -39,7 +39,6 @@ def run_experiment(
     test_x = test[selected_features].fillna(0.0)
     test_y = test["is_malicious"]
 
-    logging.info(f"Columns in input training DataFrame: {list(train.columns)}")
     logging.info("Target column: 'is_malicious'")
     logging.info(f"Features selected for training ({len(selected_features)}): {selected_features}")
 
@@ -75,3 +74,4 @@ def run_experiment(
         f"Best combination based on Validation F1: {best_row['combination_name']} from {best_row['model']} (Val F1: {best_row['val_f1_macro']:.4f})"
     )
     logging.info("All experiments finished.")
+    return final_df

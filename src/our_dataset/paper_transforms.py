@@ -86,12 +86,23 @@ def _split_windows_paper(
     df: pd.DataFrame,
     window_size: int,
     overlap: int,
-) -> list[dict[str, pd.Series]]:
+    train_ratio: float = 0.7,
+    val_ratio: float = 0.1,
+    test_ratio: float = 0.2,
+) -> tuple[
+    list[dict[str, pd.Series]],
+    list[dict[str, pd.Series]],
+    list[dict[str, pd.Series]],
+]:
     """
     Splits the paper dataframe into consecutive windows of window_size with overlap,
     grouping by activity to prevent boundary leakage.
+    Chronologically partitions the windows of each activity into train, validation, and test sets.
     """
-    windows: list[dict[str, pd.Series]] = []
+    train_windows: list[dict[str, pd.Series]] = []
+    val_windows: list[dict[str, pd.Series]] = []
+    test_windows: list[dict[str, pd.Series]] = []
+
     step = window_size - overlap
     if step <= 0:
         raise ValueError("Overlap must be strictly less than window_size.")
@@ -111,16 +122,37 @@ def _split_windows_paper(
             windowed_cols[col] = sliding_window_view(arr, window_shape=window_size)[::step]
 
         num_windows = windowed_cols["size"].shape[0]
+        group_windows = []
         for i in range(num_windows):
-            windows.append({
+            group_windows.append({
                 "interarrival": pd.Series(windowed_cols["interarrival"][i], copy=False),
                 "size": pd.Series(windowed_cols["size"][i], copy=False),
                 "is_malicious": pd.Series(windowed_cols["is_malicious"][i], copy=False),
                 "activity": pd.Series([activity] * window_size, copy=False),
             })
 
-    logging.info(f"Window splitting complete. Total windows: {len(windows)}")
-    return windows
+        n_train = int(train_ratio * num_windows)
+        n_val = int(val_ratio * num_windows)
+
+        if n_train > 0:
+            train_windows.extend(group_windows[:n_train])
+        if n_val > 0:
+            val_windows.extend(group_windows[n_train : n_train + n_val])
+        if num_windows - (n_train + n_val) > 0:
+            test_windows.extend(group_windows[n_train + n_val :])
+
+        logging.info(
+            f"windows of activity '{activity}': split into "
+            f"{n_train} train, "
+            f"{n_val} val, and "
+            f"{num_windows - (n_train + n_val)} test windows"
+        )
+
+    logging.info(
+        f"Window splitting complete. Total train windows: {len(train_windows)}, "
+        f"Total val windows: {len(val_windows)}, Total test windows: {len(test_windows)}"
+    )
+    return train_windows, val_windows, test_windows
 
 
 class PipelinePaperPycatch22(Pipeline):
@@ -147,19 +179,17 @@ class PipelinePaperPycatch22(Pipeline):
     def run_pipeline(self) -> PipelineReturn:
         logging.info("Starting PipelinePaperPycatch22 on paper df")
         
-        # 1. Split into windows
-        windows = _split_windows_paper(self._df, self._window_size, self._overlap)
+        # 1. Split into windows chronologically per activity group
+        train_wins, val_wins, test_wins = _split_windows_paper(
+            self._df,
+            self._window_size,
+            self._overlap,
+            self._train_ratio,
+            self._val_ratio,
+            self._test_ratio,
+        )
         
-        # 2. Sequential (chronological) split of windows
-        num_windows = len(windows)
-        n_train = int(self._train_ratio * num_windows)
-        n_val = int(self._val_ratio * num_windows)
-        
-        train_wins = windows[:n_train]
-        val_wins = windows[n_train : n_train + n_val]
-        test_wins = windows[n_train + n_val :]
-        
-        # 3. Extract features
+        # 2. Extract features
         train_df = _extract_catch22_features(train_wins)
         val_df = _extract_catch22_features(val_wins)
         test_df = _extract_catch22_features(test_wins)
@@ -167,7 +197,7 @@ class PipelinePaperPycatch22(Pipeline):
         if train_df.empty:
             raise ValueError("No features could be extracted from train windows.")
             
-        # 4. Scale the features
+        # 3. Scale the features
         train_feat, val_feat, test_feat, scaler = _scale(train_df, val_df, test_df)
         
         logging.info(
@@ -178,7 +208,6 @@ class PipelinePaperPycatch22(Pipeline):
         feature_cols = [
             c for c in train_feat.columns if c not in ["activity", "is_malicious"]
         ]
-        logging.info(f"PipelinePaperPycatch22: Selected {len(feature_cols)} feature columns for training: {feature_cols}")
         return train_feat, val_feat, test_feat, feature_cols
 
 
