@@ -1,5 +1,5 @@
 #let our-solution = [
-  = Solução proposta pela equipe para melhorar a solução do artigo de referência (CASO FEITA)
+  = Solução proposta pela equipe para melhorar a solução do artigo de referência
 
   // Apresentar a arquitetura e funcionamento do sistema proposto pelo artigo de referência. Utilizar figuras e/ou algoritmos e/ou equações para descrever o sistema proposto.
 
