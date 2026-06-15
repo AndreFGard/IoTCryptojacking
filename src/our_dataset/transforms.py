@@ -243,10 +243,10 @@ class Pipeline:
     def load_cache_or_run(self, dir: pathlib.Path | str) -> PipelineReturn:
         try:
             cache= self.load_cache(dir)
-            logging.info(f"loaded {name} cache from {dir}")
+            logging.info(f"loaded {self.name} cache from {dir}")
             return cache
         except FileNotFoundError:
-            logging.info(f"couldnt find {name} cache from {dir}, running pipeline")
+            logging.info(f"couldnt find {self.name} cache from {dir}, running pipeline")
 
             train, val, test, selected_features = self.run_pipeline()
             self.save_cache(dir, train, val, test, selected_features)
