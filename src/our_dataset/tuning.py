@@ -47,7 +47,7 @@ def tune_model(
         test_rec = recall_score(test_y, test_preds, average="macro")
 
         res_d = {
-            "model": model,
+            "model": model_name,
             "combination_name": comb_name,
             **params,
             "val_f1_macro": val_f1,
