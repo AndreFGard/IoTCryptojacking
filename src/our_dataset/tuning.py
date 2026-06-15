@@ -5,7 +5,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 def tune_model(
-    model_factory: Callable[..., tuple[str, Any]],
+    model_factory: Callable[..., tuple[str,str, Any]],
     param_grids: list[dict[str, list[Any]]],
     train_x: pd.DataFrame,
     train_y: pd.Series,
@@ -30,7 +30,7 @@ def tune_model(
 
     for params in ParameterGrid(param_grids):
         # Instantiate model and name from factory
-        comb_name, model = model_factory(**params)
+        model_name,comb_name, model = model_factory(**params)
         
         logging.info(f"Training combination: {comb_name}")
 
@@ -47,6 +47,7 @@ def tune_model(
         test_rec = recall_score(test_y, test_preds, average="macro")
 
         res_d = {
+            "model": model,
             "combination_name": comb_name,
             **params,
             "val_f1_macro": val_f1,

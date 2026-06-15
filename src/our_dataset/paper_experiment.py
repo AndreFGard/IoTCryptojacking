@@ -17,6 +17,7 @@ dataset_df: pd.DataFrame | None = None
 
 
 class SVCFactory:
+    name = "SVC"
     def __init__(self):
         self.param_grids = [
             {
@@ -57,7 +58,7 @@ class SVCFactory:
                 class_weight=class_weight,
                 random_state=42,
             )
-        return comb_name, model
+        return self.name, comb_name, model
 
 
 def configure_logging() -> None:
@@ -68,54 +69,6 @@ def configure_logging() -> None:
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%H:%M:%S",
     )
-
-
-def run_experiment(
-    pipeline_obj: transforms.Pipeline,
-    model,
-    out_dir="data/ours/",
-):
-    out_dir = pathlib.Path(out_dir)
-    logging.info(f"starting experiment '{pipeline_obj.name}'")
-
-    train, val, test, selected_features = pipeline_obj.load_cache_or_run(out_dir)
-    train_x = train[selected_features].fillna(0.0)
-    train_y = train["is_malicious"]
-
-    logging.info(f"Fitting model on train set with shape {train_x.shape}...")
-    model.fit(train_x, train_y)
-    logging.info("Model fitting complete.")
-
-    val_x = val[selected_features].fillna(0.0)
-    val_y = val["is_malicious"]
-    test_x = test[selected_features].fillna(0.0)
-    test_y = test["is_malicious"]
-
-    logging.info("Calculating metrics...")
-    train_preds = model.predict(train_x)
-    val_preds = model.predict(val_x)
-    test_preds = model.predict(test_x)
-
-    metrics = {
-        "train": cast(
-            dict[str, Any],
-            classification_report(train_y, train_preds, output_dict=True),
-        ),
-        "val": cast(
-            dict[str, Any], classification_report(val_y, val_preds, output_dict=True)
-        ),
-        "test": cast(
-            dict[str, Any], classification_report(test_y, test_preds, output_dict=True)
-        ),
-    }
-
-    logging.info(
-        f"Metrics - Train F1: {metrics['train']['macro avg']['f1-score']:.4f} | "
-        f"Val F1: {metrics['val']['macro avg']['f1-score']:.4f} | "
-        f"Test F1: {metrics['test']['macro avg']['f1-score']:.4f}"
-    )
-
-    return model, train, val, test, selected_features, metrics
 
 
 def main():
@@ -130,7 +83,7 @@ def main():
 
     pipeline_obj = transforms.PipelinePycatch22(dataset_df, window_size=10, overlap=0)
 
-    _, train, val, test, selected_features, _ = run_experiment(pipeline_obj, SVC())
+    train, val, test, selected_features = pipeline_obj.load_cache_or_run("data/ours/")
 
     factory = SVCFactory()
 
