@@ -32,8 +32,8 @@
 
   === Maliciosos vs. Benignos (1)
 
-  No primeiro conjunto de experimentos, foram usados dados de tráfego de rede de um repositório público para a classe dos benignos, o _dataset_ consiste de diversas atividades de usuário: interativa, transferência de dados em massa, navegação na web, reprodução de vídeo e comportamento ocioso. 
-  
+  No primeiro conjunto de experimentos, foram usados dados de tráfego de rede de um repositório público para a classe dos benignos, o _dataset_ consiste de diversas atividades de usuário: interativa, transferência de dados em massa, navegação na web, reprodução de vídeo e comportamento ocioso.
+
   Neste experimento foram testados os seguintes cenários:
 
   - S0: Desenvolvendo um mecanismo de detecção de cryptojacking
@@ -57,10 +57,32 @@
   #figure(
     result-table(
       [*Modelo*],
-      ([LogReg], [0.97], [0.97], [0.97], [0.97], [0.99],
-       [KNN], [0.98], [0.98], [0.98], [0.98], [0.99],
-       [SVM], [0.98], [0.98], [0.98], [0.98], [0.99],
-       [GNB], [0.95], [0.95], [0.95], [0.95], [0.97]),
+      (
+        [LogReg],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.99],
+        [KNN],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.99],
+        [SVM],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.99],
+        [GNB],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.97],
+      ),
       first-col-width: 1.2fr,
     ),
     caption: [Resultados da reprodução *Cenário 0*],
@@ -75,9 +97,26 @@
   #figure(
     result-table(
       [*Dispositivo*],
-      ([Server], [0.99], [0.99], [0.99], [0.99], [1.00],
-       [Desktop], [0.98], [0.98], [0.98], [0.98], [1.00],
-       [IoT], [0.92], [0.93], [0.92], [0.92], [0.97]),
+      (
+        [Server],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [1.00],
+        [Desktop],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [1.00],
+        [IoT],
+        [0.92],
+        [0.93],
+        [0.92],
+        [0.92],
+        [0.97],
+      ),
     ),
     caption: [Resultados da reprodução *Cenário 1* (SVM)],
   ) <tab:mal-vs-ben-1-cenario-1>
@@ -91,9 +130,26 @@
   #figure(
     result-table(
       [*Estratégia*],
-      ([Agressiva (100%)], [0.98], [0.98], [0.98], [0.98], [1.00],
-       [Robusta (50%)], [0.81], [0.81], [0.81], [0.81], [0.89],
-       [Furtiva (10%)], [0.91], [0.91], [0.91], [0.91], [0.97]),
+      (
+        [Agressiva (100%)],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [1.00],
+        [Robusta (50%)],
+        [0.81],
+        [0.81],
+        [0.81],
+        [0.81],
+        [0.89],
+        [Furtiva (10%)],
+        [0.91],
+        [0.91],
+        [0.91],
+        [0.91],
+        [0.97],
+      ),
     ),
     caption: [Resultados do *Cenário 2* (SVM)],
   ) <tab:mal-vs-ben-1-cenario-2>
@@ -105,12 +161,11 @@
   ==== Cenário 3 - In-Browser vs. Binary
 
   Este cenário compara duas formas de mineração com perfis distintos de tráfego. O ataque binário concentra mais sinais de rede e, por isso, tende a ser mais fácil de detectar do que o in-browser.
-  
+
   #figure(
     result-table(
       [*Tipo*],
-      ([In-Browser], [0.95], [0.95], [0.95], [0.95], [0.99],
-       [Binary], [0.99], [0.99], [0.99], [0.99], [1.00]),
+      ([In-Browser], [0.95], [0.95], [0.95], [0.95], [0.99], [Binary], [0.99], [0.99], [0.99], [0.99], [1.00]),
     ),
     caption: [Resultados do *Cenário 3* (SVM)],
   ) <tab:mal-vs-ben-1-cenario-3>
@@ -119,15 +174,37 @@
 
   ==== Cenários 4 a 7 - Níveis de Comprometimento da Rede
 
-  Os Cenários 4 a 7 avaliam como a taxa de comprometimento da rede altera a detectabilidade do ataque. 
+  Os Cenários 4 a 7 avaliam como a taxa de comprometimento da rede altera a detectabilidade do ataque.
 
   #figure(
     result-table(
       [*Cenário*],
-      ([Fully Compromised], [0.98], [0.98], [0.98], [0.98], [0.99],
-       [Partially Compromised], [0.98], [0.98], [0.98], [0.98], [1.00],
-       [Single Compromised], [0.91], [0.91], [0.91], [0.91], [0.97],
-       [IoT Compromised], [0.90], [0.90], [0.90], [0.90], [0.96]),
+      (
+        [Fully Compromised],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.99],
+        [Partially Compromised],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [1.00],
+        [Single Compromised],
+        [0.91],
+        [0.91],
+        [0.91],
+        [0.91],
+        [0.97],
+        [IoT Compromised],
+        [0.90],
+        [0.90],
+        [0.90],
+        [0.90],
+        [0.96],
+      ),
       first-col-width: 3fr,
     ),
     caption: [Resultados dos *Cenários 4 a 7* (SVM)],
@@ -154,9 +231,26 @@
   #figure(
     result-table(
       [*Dispositivo*],
-      ([Servidor], [0.99], [0.99], [0.99], [0.99], [1.00],
-       [Desktop], [0.95], [0.95], [0.95], [0.95], [0.98],
-       [IoT], [0.94], [0.94], [0.94], [0.94], [0.98]),
+      (
+        [Servidor],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [1.00],
+        [Desktop],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.98],
+        [IoT],
+        [0.94],
+        [0.94],
+        [0.94],
+        [0.94],
+        [0.98],
+      ),
     ),
     caption: [Resultados da reprodução *Cenário 1* _benign-2_],
   ) <tab:mb2-cenario1>
@@ -173,9 +267,26 @@
   #figure(
     result-table(
       [*Estratégia*],
-      ([Agressivo (100%)], [0.94], [0.94], [0.94], [0.94], [0.98],
-       [Robusto (50%)], [0.96], [0.96], [0.96], [0.96], [0.99],
-       [Furtivo (10%)], [0.86], [0.87], [0.86], [0.86], [0.93]),
+      (
+        [Agressivo (100%)],
+        [0.94],
+        [0.94],
+        [0.94],
+        [0.94],
+        [0.98],
+        [Robusto (50%)],
+        [0.96],
+        [0.96],
+        [0.96],
+        [0.96],
+        [0.99],
+        [Furtivo (10%)],
+        [0.86],
+        [0.87],
+        [0.86],
+        [0.86],
+        [0.93],
+      ),
     ),
     caption: [Resultados da reprodução *Cenário 2* _benign-2_],
   ) <tab:mb2-cenario2>
@@ -190,8 +301,7 @@
   #figure(
     result-table(
       [*Tipo*],
-      ([_In-browser_], [0.96], [0.96], [0.96], [0.96], [0.99],
-       [_Binary_], [0.97], [0.97], [0.97], [0.97], [1.00]),
+      ([_In-browser_], [0.96], [0.96], [0.96], [0.96], [0.99], [_Binary_], [0.97], [0.97], [0.97], [0.97], [1.00]),
     ),
     caption: [Resultados da reprodução *Cenário 3* _benign-2_],
   ) <tab:mb2-cenario3>
@@ -204,10 +314,32 @@
   #figure(
     result-table(
       [*Cenário*],
-      ([Fully Compromised], [0.95], [0.95], [0.95], [0.95], [0.99],
-       [Partially Compromised], [0.97], [0.97], [0.97], [0.97], [0.99],
-       [Single Compromised], [0.96], [0.96], [0.96], [0.96], [0.99],
-       [IoT Compromised], [0.95], [0.95], [0.95], [0.95], [0.99]),
+      (
+        [Fully Compromised],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.99],
+        [Partially Compromised],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.99],
+        [Single Compromised],
+        [0.96],
+        [0.96],
+        [0.96],
+        [0.96],
+        [0.99],
+        [IoT Compromised],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.95],
+        [0.99],
+      ),
     ),
     caption: [Resultados da reprodução *Cenários 4 a 7* _benign-2_],
   ) <tab:mb2-cenarios4a7>
@@ -219,12 +351,44 @@
   #figure(
     result-table(
       [*Dataset*],
-      ([Timely Balanced], [0.99], [0.99], [0.99], [0.99], [0.95],
-       [Timely Balanced (Oversampled)], [0.97], [0.97], [0.97], [0.97], [0.99],
-       [Server x Server], [0.98], [0.98], [0.98], [0.98], [0.99],
-       [Laptop x Laptop], [0.99], [0.99], [0.99], [0.99], [0.99],
-       [Raspberry x Raspberry], [0.97], [0.97], [0.97], [0.97], [0.96],
-       [WebOS x WebOS], [0.97], [0.97], [0.97], [0.97], [0.99]),
+      (
+        [Timely Balanced],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.95],
+        [Timely Balanced (Oversampled)],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.99],
+        [Server x Server],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.98],
+        [0.99],
+        [Laptop x Laptop],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [Raspberry x Raspberry],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.96],
+        [WebOS x WebOS],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.97],
+        [0.99],
+      ),
     ),
     caption: [Resultados da reprodução *Cenário 8*],
   ) <tab:cenario8>
@@ -236,14 +400,56 @@
   #figure(
     result-table(
       [*Experimento*],
-      ([Service Provider-1], [0.92], [0.93], [0.92], [0.92], [—],
-       [Service Provider-2], [0.75], [0.92], [0.75], [0.80], [—],
-       [Binary-1], [0.87], [0.83], [0.87], [0.82], [—],
-       [Binary-In-Browser-1], [0.89], [0.90], [0.89], [0.87], [—],
-       [Binary-In-Browser-2], [0.99], [0.99], [0.99], [0.99], [—],
-       [Binary-In-Browser-3], [0.99], [0.99], [0.99], [0.99], [—],
-       [In-Browser-1], [0.99], [0.99], [0.99], [0.99], [—],
-       [In-Browser-2], [0.99], [0.99], [0.99], [0.99], [—]),
+      (
+        [Service Provider-1],
+        [0.92],
+        [0.93],
+        [0.92],
+        [0.92],
+        [—],
+        [Service Provider-2],
+        [0.75],
+        [0.92],
+        [0.75],
+        [0.80],
+        [—],
+        [Binary-1],
+        [0.87],
+        [0.83],
+        [0.87],
+        [0.82],
+        [—],
+        [Binary-In-Browser-1],
+        [0.89],
+        [0.90],
+        [0.89],
+        [0.87],
+        [—],
+        [Binary-In-Browser-2],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [—],
+        [Binary-In-Browser-3],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [—],
+        [In-Browser-1],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [—],
+        [In-Browser-2],
+        [0.99],
+        [0.99],
+        [0.99],
+        [0.99],
+        [—],
+      ),
       first-col-width: 2.4fr,
     ),
     caption: [Resultados da reprodução — *Cenário 9*],
@@ -283,27 +489,24 @@
       align: (left, center, center, center, center, center, center),
       stroke: none,
       table.hline(y: 0, stroke: 0.5pt),
-      table.header(
-        [*Kernel*], [*C*], [*Gamma*],
-        [*Acc.*], [*Prec.*], [*Recall*], [*F1*],
-      ),
+      table.header([*Kernel*], [*C*], [*Gamma*], [*Acc.*], [*Prec.*], [*Recall*], [*F1*]),
       table.hline(y: 1, stroke: 0.5pt),
-      [Linear],[1],[Scale],[1.00],[1.00],[1.00],[1.00],
-      [Poly],  [1],[Scale],[0.80],[0.81],[0.80],[0.80],
-      [RBF],   [1],[Scale],[0.81],[0.81],[0.81],[0.81],
-      [Sigmoid],[1],[Scale],[0.62],[0.62],[0.62],[0.62],
-      [Linear],[1],[Auto],[1.00],[1.00],[1.00],[1.00],
-      [Poly],  [1],[Auto],[0.89],[0.89],[0.89],[0.89],
-      [RBF],   [1],[Auto],[0.60],[0.77],[0.60],[0.54],
-      [Sigmoid],[1],[Auto],[0.51],[0.26],[0.51],[0.35],
-      [Linear],[2],[Scale],[1.00],[1.00],[1.00],[1.00],
-      [Poly],  [2],[Scale],[0.83],[0.83],[0.83],[0.83],
-      [RBF],   [2],[Scale],[0.82],[0.83],[0.82],[0.82],
-      [Sigmoid],[2],[Scale],[0.62],[0.62],[0.62],[0.62],
-      [Linear],[2],[Auto],[1.00],[1.00],[1.00],[1.00],
-      [Poly],  [2],[Auto],[0.89],[0.89],[0.89],[0.89],
-      [RBF],   [2],[Auto],[0.60],[0.77],[0.60],[0.54],
-      [Sigmoid],[2],[Auto],[0.51],[0.26],[0.51],[0.35],
+      [Linear], [1], [Scale], [1.00], [1.00], [1.00], [1.00],
+      [Poly], [1], [Scale], [0.80], [0.81], [0.80], [0.80],
+      [RBF], [1], [Scale], [0.81], [0.81], [0.81], [0.81],
+      [Sigmoid], [1], [Scale], [0.62], [0.62], [0.62], [0.62],
+      [Linear], [1], [Auto], [1.00], [1.00], [1.00], [1.00],
+      [Poly], [1], [Auto], [0.89], [0.89], [0.89], [0.89],
+      [RBF], [1], [Auto], [0.60], [0.77], [0.60], [0.54],
+      [Sigmoid], [1], [Auto], [0.51], [0.26], [0.51], [0.35],
+      [Linear], [2], [Scale], [1.00], [1.00], [1.00], [1.00],
+      [Poly], [2], [Scale], [0.83], [0.83], [0.83], [0.83],
+      [RBF], [2], [Scale], [0.82], [0.83], [0.82], [0.82],
+      [Sigmoid], [2], [Scale], [0.62], [0.62], [0.62], [0.62],
+      [Linear], [2], [Auto], [1.00], [1.00], [1.00], [1.00],
+      [Poly], [2], [Auto], [0.89], [0.89], [0.89], [0.89],
+      [RBF], [2], [Auto], [0.60], [0.77], [0.60], [0.54],
+      [Sigmoid], [2], [Auto], [0.51], [0.26], [0.51], [0.35],
       table.hline(stroke: 0.5pt),
     ),
     caption: [Resultados da reprodução *Cenário 10*],
@@ -329,11 +532,11 @@
 
   == Resultados no novo conjunto de dados
 
-  Com a reprodução do método de @iotcryptojacking no novo _dataset_, @tab:our-svc-tune apresenta os resultados obtidos com a tunagem de hiperparâmetros. 
+  Com a reprodução do método de @iotcryptojacking no novo _dataset_, @tab:our-svc-tune apresenta os resultados obtidos com a tunagem de hiperparâmetros.
 
   === Ajuste de Hiperparâmetros
 
-   #figure(
+  #figure(
     {
       let data = csv("../data/our_svc_tune_results.csv")
       table(
@@ -366,18 +569,18 @@
       table.hline(y: 0, stroke: 0.5pt),
       table.header([*Classe*], [*Prec.*], [*Recall*], [*F1*], [*Suporte*]),
       table.hline(y: 1, stroke: 0.5pt),
-      [Benigno],         [0.99], [0.99], [0.99], [30.456],
-      [Malicioso],       [0.88], [0.95], [0.91], [540],
+      [Benigno], [0.99], [0.99], [0.99], [30.456],
+      [Malicioso], [0.88], [0.95], [0.91], [540],
       table.hline(stroke: 0.5pt),
-      [*Média Macro*],     [*0.94*], [*0.97*], [*0.96*], [30.996],
-      [*Média Ponderada*],  [1.00], [1.00], [1.00], [30.996],
+      [*Média Macro*], [*0.94*], [*0.97*], [*0.96*], [30.996],
+      [*Média Ponderada*], [1.00], [1.00], [1.00], [30.996],
       table.hline(stroke: 0.5pt),
     ),
     caption: [Relatório de classificação do melhor SVM (RBF, C=2, gamma=auto, pesos balanceados) no conjunto de teste do novo dataset.],
   ) <tab:our-svc-best>
 
   Em @tab:vpn_acc_mali, vemos que as VPNs são uma ferramenta de obfuscação de _cryptojacking_ com efetividade considerável, aumentando a dificuldade de classificação dos pacotes maliciosos, diminuindo a acurácia na classe maligna em até 9%.
-#figure(
+  #figure(
     {
       let data = csv("../data/vpn_to_acc_mali.csv")
       table(
@@ -401,12 +604,13 @@
   //Atentar para não apenas descrever os resultados apresentados, mas também para explicá-los e discuti-los.
 
   == Resultados das propostas de melhoria do artigo
+  Nesta seção, apresentamos os resultados das propostas de melhoria sugeridas anteriormente, bem como a tunagem de hiperparâmetros do SVM e _Random Forest_, em ambos os datasets.
 
   === No dataset original
 
   Tendo em vista o desempenho satisfatório da metodologia original na maioria dos cenários, optou-se por avaliar as propostas de melhoria nos cenários mais desafiadores, que são o S2 (Furtivo e Robusto), S6 (IoT único) e S7 (IoT + IoT) @iotcryptojacking.
 
-  A @tab:delta_paper compara o F1 Macro do pipeline original (SVM com _Tsfresh_, 5-fold CV) com o melhor resultado obtido com a proposta de melhoria em cada cenário, no conjunto de teste.
+  A @tab:delta_paper compara o F1 Macro no conjunto de teste do pipeline original (SVM com _Tsfresh_, 5-fold CV) com o melhor resultado, selecionado via tunagem, obtido com a proposta de melhoria em cada cenário.
 
   #figure(
     table(
@@ -414,28 +618,21 @@
       align: (left, center, center, center, center, center),
       stroke: none,
       table.hline(y: 0, stroke: 0.5pt),
-      table.header(
-        [*Cenário*],
-        [*F1 Original*],
-        [*F1 SVM Novo*],
-        [*Δ SVM Novo*],
-        [*F1 RF*],
-        [*Δ RF*],
-      ),
+      table.header([*Cenário*], [*F1 Original*], [*F1 SVM Novo*], [*Δ SVM Novo*], [*F1 RF*], [*Δ RF*]),
       table.hline(y: 1, stroke: 0.5pt),
-      [S2 Furtivo (10%)],   [0.91], [0.91], [+0.00], [0.91], [+0.00],
-      [S2 Robusto (50%)],   [0.81], [0.85], [*+0.04*], [0.88], [*+0.07*],
-      [S6 (Single IoT)],    [0.91], [0.91], [+0.00], [0.93], [*+0.02*],
-      [S7 (IoT + IoT)],     [0.90], [0.91], [+0.01], [0.92], [*+0.02*],
+      [S2 Furtivo (10%)], [0.91], [0.91], [+0.00], [0.91], [+0.00],
+      [S2 Robusto (50%)], [0.81], [0.85], [*+0.04*], [0.88], [*+0.07*],
+      [S6 (Single IoT)], [0.91], [0.91], [+0.00], [0.93], [*+0.02*],
+      [S7 (IoT + IoT)], [0.90], [0.91], [+0.01], [0.92], [*+0.02*],
       table.hline(stroke: 0.5pt),
     ),
     caption: [Comparação do F1 Macro entre o pipeline original e a proposta de melhoria no dataset do artigo de referência],
   ) <tab:delta_paper>
 
-  O ganho mais expressivo ocorre no cenário S2 Robusto, que antes havia sido o mais desafiador. Neste, o SVM com _Pycatch22_ supera o pipeline original em 4%, e o _RandomForest_ em 7%. Nos demais cenários, os modelos atingem desempenho equivalente ou ligeiramente superior ao original, com o _RandomForest_ predominantemente superior ao SVM.
+  O ganho mais expressivo ocorre no cenário S2 Robusto, que antes havia sido o mais desafiador. Neste, o SVM com _Pycatch22_ supera o pipeline original em 4%, e o _Random Forest_ em 7%. Nos demais cenários, os modelos atingem desempenho equivalente ou ligeiramente superior ao original, com o _Random Forest_ predominantemente superior ao SVM.
 
 
-  As @tab:best_tunes_svc_paper e @tab:best_tunes_rf_paper apresentam a melhor configuração de hiperparâmetros por cenário no dataset do artigo de referência, com resultados alinhados aos observados anteriormente quanto ao efeito dos parâmetros do SVM.
+  As @tab:best_tunes_svc_paper e @tab:best_tunes_rf_paper apresentam a melhor configuração de hiperparâmetros por cenário no dataset do artigo de referência. O efeito dos parâmetros no desempenho se mostrou similar ao observado anteriormente, com o balanceamento das classes se mostrando importante, bem como a escolha de Kernel.
 
   #figure(
     {
@@ -468,12 +665,12 @@
         table.hline(stroke: 0.5pt),
       )
     },
-    caption: [Melhor configuração de _RandomForest_ por cenário no dataset original],
+    caption: [Melhor configuração de _Random Forest_ por cenário no dataset original],
   ) <tab:best_tunes_rf_paper>
 
   === No novo dataset
 
-  Ao contrário do observado no dataset original, as alterações propostas não foram benéficas no dataset novo, com perda de 5% no F1 Macro em relação ao pipeline original com _Tsfresh_. No entanto, o tempo de treinamento foi reduzido drasticamente, de \~200 para \~40 segundos. Ademais, com apenas 44 características ao invés de 416, a execução em ambiente com recursos restritos se torna mais fácil.
+  Ao contrário do observado no dataset original, as alterações propostas não foram benéficas no dataset novo, com perda de 5% no F1 Macro em relação ao pipeline original, com _Tsfresh_. No entanto, o tempo de treinamento foi reduzido drasticamente, de \~200 para \~40 segundos. Ademais, com apenas 44 características ao invés de 416, a execução em ambiente com recursos restritos se torna mais fácil.
 
   A @tab:delta_ours resume o impacto da mudança de metodologia no novo dataset.
 
@@ -483,14 +680,7 @@
       align: (left, center, center, center, center, center),
       stroke: none,
       table.hline(y: 0, stroke: 0.5pt),
-      table.header(
-        [*Dataset*],
-        [*F1 Original*],
-        [*F1 SVM Novo*],
-        [*Δ SVM Novo*],
-        [*F1 RF*],
-        [*Δ RF*],
-      ),
+      table.header([*Dataset*], [*F1 Original*], [*F1 SVM Novo*], [*Δ SVM Novo*], [*F1 RF*], [*Δ RF*]),
       table.hline(y: 1, stroke: 0.5pt),
       [Novo dataset], [0.96], [0.91], [-0.05], [0.91], [-0.05],
       table.hline(stroke: 0.5pt),
@@ -498,9 +688,9 @@
     caption: [Comparação do F1 Macro entre o pipeline original (_Tsfresh_, SVM) e a proposta de melhoria (_Pycatch22_) no novo dataset],
   ) <tab:delta_ours>
 
-  O _RandomForest_ com _Pycatch22_ obteve desempenho equivalente ao SVM com treino quase instantâneo (~7 s contra ~40 s), mas ambos ficaram 5% abaixo do SVM original com _Tsfresh_. Ainda assim, o _Pycatch22_, assim como o _RandomForest_, se mostram promissores para estudos futuros.
+  O _Random Forest_ com _Pycatch22_ obteve desempenho equivalente ao SVM com treino quase instantâneo (~7 s contra ~40 s), mas ambos ficaram 5% abaixo do SVM original com _Tsfresh_. Ainda assim, o _Pycatch22_, assim como o _Random Forest_, se mostram promissores para estudos futuros.
 
-  As @tab:rf_pycatch22_ours e @tab:svc_pycatch22_ours apresentam a tunagem completa no novo dataset. Percebe-se que o balanceamento de classes foi o parâmetro determinante para o _RandomForest_. Apesar disso, este não foi positivo para o SVM, contrastando com os resultados anteriores, além de ter aumentado o tempo de treino. Neste caso, o Kernel foi o parâmetro mais importante, com uma distribuição de Kernel x Desempenho muito similar à apresentada anteriormente. 
+  As @tab:rf_pycatch22_ours e @tab:svc_pycatch22_ours apresentam a tunagem completa no novo dataset. Percebe-se que o balanceamento de classes foi o parâmetro determinante para o _Random Forest_. Apesar disso, este não foi positivo para o SVM, contrastando com os resultados anteriores, além de ter aumentado o tempo de treino. Neste caso, o Kernel foi o parâmetro mais importante, com uma distribuição de Kernel x Desempenho muito similar à apresentada previamente.
 
   #figure(
     {
@@ -516,12 +706,11 @@
         table.hline(stroke: 0.5pt),
       )
     },
-    caption: [Tunagem de parâmetros de _RandomForest_ no novo dataset],
+    caption: [Tunagem de parâmetros de _Random Forest_ no novo dataset],
   ) <tab:rf_pycatch22_ours>
 
   #figure(
-
-    placement:bottom,
+    placement: bottom,
     {
       let data = csv("../data/our_pycatch22_svc_tune_results.csv")
       table(

@@ -168,4 +168,8 @@
 
   O desbalanceamento severo é um problema claro nos dois datasets, já que o tráfego benigno contínuo é muito maior que o tráfego de mineração. Isso influencia diretamente o treinamento. Por isso, incluímos o parâmetro class_weight="balanced" na busca, ajustando o peso das classes de forma a amenizar os efeitos da super-representação de uma classe. Nesse sentido, o uso do F1 Macro ao invés do F1 Ponderado também é crucial#footnote[Uma métrica Macro, como o F1 Macro, une o F1 de ambas as classes com uma média simples, invariante a desbalanceamento, enquanto as métricas ponderadas (_weighted_) aumentam o peso de uma classe na métrica final de acordo com a sua representatividade], pois esse é mais robusto ao desbalanceamento.
 
+  == Propostas de melhoria na metodologia
+  O preprocessamento e metodologia usados para avaliar as melhorias propostas foi baseado na metodologia usada no dataset novo, com a mesma extração de janelas, separação em treino, validação e teste e normalização dos dados. No entanto, a extração de features foi substituída pelo _Pycatch22_, como já elaborado, e não foi usada seleção de features.
+  
+  Além disso, foi usado um modelo _RandomForest_ que foi avaliado, junto ao SVM, com esta nova metodologia em ambos os datasets. Ambos passaram por uma tunagem de hiperparâmetros baseada no F1 Macro do conjunto de validação de cada dataset.
 ]
