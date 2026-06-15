@@ -265,8 +265,8 @@ class Pipeline:
         
         with open(features_file, "r") as f:
             selected_features = [line.strip() for line in f if line.strip()]
-            
-        logging.info(f"loaded {self.name} cache from {dir}: " f"({len(cache[0])} train win, {len(cache[0])} val, {len(cache[0])} test)")
+
+        logging.info(f"loaded {self.name} cache from {dir}: " f"({len(train)} train win, {len(val)} val, {len(test)} test)")
 
         return train, val, test, selected_features
 
