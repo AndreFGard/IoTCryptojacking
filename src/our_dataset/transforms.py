@@ -1,4 +1,5 @@
 import logging
+import pathlib
 from dataclasses import dataclass
 from typing import Any, cast
 import numpy as np
@@ -11,17 +12,10 @@ from tsfresh.feature_selection.relevance import calculate_relevance_table
 from tsfresh.utilities.dataframe_functions import impute
 
 PipelineReturn = tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, "PreprocessingEstimators"
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, list[str]
 ]
 
 CPU_COUNT = 8
-
-
-@dataclass
-class PreprocessingEstimators:
-    encoder: compose.ColumnTransformer
-    scaler: preprocessing.StandardScaler
-    selected_features: list[str]
 
 
 def _encode(
@@ -243,137 +237,192 @@ def _scale(
         test_copy[feature_cols] = scaler.transform(cast(pd.DataFrame, test_copy[feature_cols]))
     return train_copy, val_copy, test_copy, scaler
 
+class Pipeline:
+    name: str
 
-def pipeline_pycatch22(
-    df: pd.DataFrame,
-    window_size: int,
-    overlap: int,
-    train_ratio: float = 0.7,
-    val_ratio: float = 0.1,
-    test_ratio: float = 0.2,
-) -> PipelineReturn:
-    logging.info("starting pipeline on df")
-    encoded_df, ct = _encode(df)
-    train_windows, val_windows, test_windows = _split_windows(
-        encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
-    )
+    def load_cache_or_run(self, dir: pathlib.Path | str) -> PipelineReturn:
+        try:
+            return self.load_cache(dir)
+        except FileNotFoundError:
+            train, val, test, selected_features = self.run_pipeline()
+            self.save_cache(dir, train, val, test, selected_features)
+            return train, val, test, selected_features
 
-    train_feat = _extract_catch22_features(train_windows)
-    val_feat = _extract_catch22_features(val_windows)
-    test_feat = _extract_catch22_features(test_windows)
+    def load_cache(self, dir: pathlib.Path | str) -> PipelineReturn:
+        dir_path = pathlib.Path(dir)
+        required_files = [dir_path / f"{self.name}_{s}.csv" for s in ["train", "val", "test"]]
+        features_file = dir_path / f"{self.name}_selected_features.txt"
+        
+        if not (all(f.exists() for f in required_files) and features_file.exists()):
+            raise FileNotFoundError(f"Cache files for pipeline '{self.name}' not found in {dir_path}")
+            
+        train = pd.read_csv(required_files[0])
+        val = pd.read_csv(required_files[1])
+        test = pd.read_csv(required_files[2])
+        
+        with open(features_file, "r") as f:
+            selected_features = [line.strip() for line in f if line.strip()]
+            
+        return train, val, test, selected_features
 
-    train_feat, val_feat, test_feat, scaler = _scale(train_feat, val_feat, test_feat)
+    def save_cache(
+        self,
+        dir: pathlib.Path | str,
+        train: pd.DataFrame,
+        val: pd.DataFrame,
+        test: pd.DataFrame,
+        selected_features: list[str],
+    ) -> None:
+        dir_path = pathlib.Path(dir)
+        dir_path.mkdir(exist_ok=True, parents=True)
+        required_files = [dir_path / f"{self.name}_{s}.csv" for s in ["train", "val", "test"]]
+        features_file = dir_path / f"{self.name}_selected_features.txt"
+        
+        for df, file in zip([train, val, test], required_files):
+            df.to_csv(file, index=False)
+            
+        with open(features_file, "w") as f:
+            for feat in selected_features:
+                f.write(f"{feat}\n")
 
-    logging.info(
-        f"completed pipeline: train features: {train_feat.shape}, "
-        f"val features: {val_feat.shape}, test features: {test_feat.shape}"
-    )
-    feature_cols = [
-        c for c in train_feat.columns if c not in ["activity", "vpn", "is_malicious"]
-    ]
-    estimators = PreprocessingEstimators(
-        encoder=ct, scaler=scaler, selected_features=feature_cols
-    )
-    return train_feat, val_feat, test_feat, estimators
+    def run_pipeline(self) -> PipelineReturn:
+        raise NotImplementedError
 
 
-def pipeline_tsfresh(
-    df: pd.DataFrame,
-    window_size: int,
-    overlap: int,
-    train_ratio: float = 0.7,
-    val_ratio: float = 0.1,
-    test_ratio: float = 0.2,
-) -> PipelineReturn:
-    logging.info("starting pipeline_tsfresh on df")
+class PipelinePycatch22(Pipeline):
+    name = "pycatch22"
 
-    df_copy = df.copy()
-    df_copy["is_malicious"] = (
-        df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
-    )
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        window_size: int,
+        overlap: int,
+        train_ratio: float = 0.7,
+        val_ratio: float = 0.1,
+        test_ratio: float = 0.2,
+    ) -> None:
+        self._df = df
+        self._window_size = window_size
+        self._overlap = overlap
+        self._train_ratio = train_ratio
+        self._val_ratio = val_ratio
+        self._test_ratio = test_ratio
 
-    encoded_df, ct = _encode(df_copy)
-    train_windows, val_windows, test_windows = _split_windows(
-        encoded_df, window_size, overlap, train_ratio, val_ratio, test_ratio
-    )
-
-    train_feat_all = _extract_features_tsfresh(train_windows)
-    val_feat_all = _extract_features_tsfresh(val_windows)
-    test_feat_all = _extract_features_tsfresh(test_windows)
-
-    if train_feat_all.empty or val_feat_all.empty or test_feat_all.empty:
-        logging.warning(
-            "one of the extracted feature dataframes is empty; returning empty dataframes"
+    def run_pipeline(self) -> PipelineReturn:
+        logging.info("starting pipeline on df")
+        encoded_df, ct = _encode(self._df)
+        train_windows, val_windows, test_windows = _split_windows(
+            encoded_df, self._window_size, self._overlap, self._train_ratio, self._val_ratio, self._test_ratio
         )
-        scaler = preprocessing.StandardScaler()
-        scaler.fit(np.zeros((1, 1)))
-        estimators = PreprocessingEstimators(
-            encoder=ct, scaler=scaler, selected_features=[]
+
+        train_feat = _extract_catch22_features(train_windows)
+        val_feat = _extract_catch22_features(val_windows)
+        test_feat = _extract_catch22_features(test_windows)
+
+        train_feat, val_feat, test_feat, scaler = _scale(train_feat, val_feat, test_feat)
+
+        logging.info(
+            f"completed pipeline: train features: {train_feat.shape}, "
+            f"val features: {val_feat.shape}, test features: {test_feat.shape}"
         )
-        return train_feat_all, val_feat_all, test_feat_all, estimators
-
-    logging.info("starting feature selection via relevance table")
-    meta_cols = ["activity", "vpn", "is_malicious"]
-    feature_cols = [c for c in train_feat_all.columns if c not in meta_cols]
-
-    X_train = train_feat_all[feature_cols]
-    y_train = train_feat_all["is_malicious"]
-
-    relevance_table = cast(
-        pd.DataFrame, calculate_relevance_table(X_train, y_train, n_jobs=CPU_COUNT)
-    )
-    relevance_table = relevance_table[relevance_table["relevant"]]
-    relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
-
-    best_features = relevance_table[relevance_table["p_value"] <= 0.05]
-    selected_features = best_features["feature"].tolist()
-    if not selected_features:
-        selected_features = feature_cols
-
-    train_feat = train_feat_all[selected_features].copy().round(6)
-    val_feat = val_feat_all[selected_features].copy().round(6)
-    test_feat = test_feat_all[selected_features].copy().round(6)
-
-    for col in ["activity", "vpn", "is_malicious"]:
-        if col in train_feat_all.columns:
-            train_feat[col] = train_feat_all[col].values
-        if col in val_feat_all.columns:
-            val_feat[col] = val_feat_all[col].values
-        if col in test_feat_all.columns:
-            test_feat[col] = test_feat_all[col].values
-
-    train_feat, val_feat, test_feat, scaler = _scale(
-        cast(pd.DataFrame, train_feat),
-        cast(pd.DataFrame, val_feat),
-        cast(pd.DataFrame, test_feat),
-    )
-
-    logging.info(
-        f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
-        f"val features: {val_feat.shape}, test features: {test_feat.shape}"
-    )
-    assert (
-        isinstance(train_feat, pd.DataFrame)
-        and isinstance(val_feat, pd.DataFrame)
-        and isinstance(test_feat, pd.DataFrame)
-    )
-    estimators = PreprocessingEstimators(
-        encoder=ct, scaler=scaler, selected_features=selected_features
-    )
-    return train_feat, val_feat, test_feat, estimators
+        feature_cols = [
+            c for c in train_feat.columns if c not in ["activity", "vpn", "is_malicious"]
+        ]
+        return train_feat, val_feat, test_feat, feature_cols
 
 
-def pipeline(
-    df: pd.DataFrame,
-    window_size: int,
-    overlap: int,
-    train_ratio: float = 0.7,
-    val_ratio: float = 0.1,
-    test_ratio: float = 0.2,
-) -> PipelineReturn:
-    return pipeline_pycatch22(
-        df, window_size, overlap, train_ratio, val_ratio, test_ratio
-    )
+class PipelineTsfresh(Pipeline):
+    name = "tsfresh"
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        window_size: int,
+        overlap: int,
+        train_ratio: float = 0.7,
+        val_ratio: float = 0.1,
+        test_ratio: float = 0.2,
+    ) -> None:
+        self._df = df
+        self._window_size = window_size
+        self._overlap = overlap
+        self._train_ratio = train_ratio
+        self._val_ratio = val_ratio
+        self._test_ratio = test_ratio
+
+    def run_pipeline(self) -> PipelineReturn:
+        logging.info("starting pipeline_tsfresh on df")
+
+        df_copy = self._df.copy()
+        df_copy["is_malicious"] = (
+            df_copy["activity"].isin(["bitcoin", "bytecoin", "monero"]).astype(int)
+        )
+
+        encoded_df, ct = _encode(df_copy)
+        train_windows, val_windows, test_windows = _split_windows(
+            encoded_df, self._window_size, self._overlap, self._train_ratio, self._val_ratio, self._test_ratio
+        )
+
+        train_feat_all = _extract_features_tsfresh(train_windows)
+        val_feat_all = _extract_features_tsfresh(val_windows)
+        test_feat_all = _extract_features_tsfresh(test_windows)
+
+        if train_feat_all.empty or val_feat_all.empty or test_feat_all.empty:
+            logging.warning(
+                "one of the extracted feature dataframes is empty; returning empty dataframes"
+            )
+            scaler = preprocessing.StandardScaler()
+            scaler.fit(np.zeros((1, 1)))
+            return train_feat_all, val_feat_all, test_feat_all, []
+
+        logging.info("starting feature selection via relevance table")
+        meta_cols = ["activity", "vpn", "is_malicious"]
+        feature_cols = [c for c in train_feat_all.columns if c not in meta_cols]
+
+        X_train = train_feat_all[feature_cols]
+        y_train = train_feat_all["is_malicious"]
+
+        relevance_table = cast(
+            pd.DataFrame, calculate_relevance_table(X_train, y_train, n_jobs=CPU_COUNT)
+        )
+        relevance_table = relevance_table[relevance_table["relevant"]]
+        relevance_table = cast(pd.DataFrame, relevance_table).sort_values(by="p_value")
+
+        best_features = relevance_table[relevance_table["p_value"] <= 0.05]
+        selected_features = best_features["feature"].tolist()
+        if not selected_features:
+            selected_features = feature_cols
+
+        train_feat = train_feat_all[selected_features].copy().round(6)
+        val_feat = val_feat_all[selected_features].copy().round(6)
+        test_feat = test_feat_all[selected_features].copy().round(6)
+
+        for col in ["activity", "vpn", "is_malicious"]:
+            if col in train_feat_all.columns:
+                train_feat[col] = train_feat_all[col].values
+            if col in val_feat_all.columns:
+                val_feat[col] = val_feat_all[col].values
+            if col in test_feat_all.columns:
+                test_feat[col] = test_feat_all[col].values
+
+        train_feat, val_feat, test_feat, scaler = _scale(
+            cast(pd.DataFrame, train_feat),
+            cast(pd.DataFrame, val_feat),
+            cast(pd.DataFrame, test_feat),
+        )
+
+        logging.info(
+            f"completed pipeline_tsfresh: train features: {train_feat.shape}, "
+            f"val features: {val_feat.shape}, test features: {test_feat.shape}"
+        )
+        assert (
+            isinstance(train_feat, pd.DataFrame)
+            and isinstance(val_feat, pd.DataFrame)
+            and isinstance(test_feat, pd.DataFrame)
+        )
+        return train_feat, val_feat, test_feat, selected_features
+
+
 
 
 if __name__ == "__main__":
@@ -387,6 +436,7 @@ if __name__ == "__main__":
 
     dataset = dataset.load_dataset()
     logging.info("Testing catch22 pipeline...")
-    pipeline_pycatch22(dataset.df.iloc[:200], window_size=10, overlap=5)
+    PipelinePycatch22(dataset.df.iloc[:200], window_size=10, overlap=5).run_pipeline()
     logging.info("Testing tsfresh pipeline...")
-    pipeline_tsfresh(dataset.df.iloc[:200], window_size=10, overlap=5)
+    PipelineTsfresh(dataset.df.iloc[:200], window_size=10, overlap=5).run_pipeline()
+

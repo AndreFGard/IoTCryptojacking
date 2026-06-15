@@ -1,60 +1,38 @@
-import datetime
 import logging
-import pathlib
-from typing import Any, cast
+from typing import Any, Callable
 import pandas as pd
-from sklearn.svm import SVC, LinearSVC
 from sklearn.model_selection import ParameterGrid
-from sklearn.metrics import classification_report, f1_score, precision_score, recall_score
+from sklearn.metrics import f1_score, precision_score, recall_score
 
-def tune_svc(
-    train: pd.DataFrame,
-    val: pd.DataFrame,
-    test: pd.DataFrame,
-    selected_features: list[str],
+def tune_model(
+    model_factory: Callable[..., tuple[str, Any]],
     param_grids: list[dict[str, list[Any]]],
-    out_dir: str | pathlib.Path = "data/ours/",
+    train_x: pd.DataFrame,
+    train_y: pd.Series,
+    val_x: pd.DataFrame,
+    val_y: pd.Series,
+    test_x: pd.DataFrame,
+    test_y: pd.Series,
 ) -> pd.DataFrame:
-    out_dir = pathlib.Path(out_dir)
-    out_dir.mkdir(exist_ok=True, parents=True)
-
-    train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
-    train_y = train["is_malicious"]
-    val_x = cast(pd.DataFrame, val[selected_features].fillna(0.0))
-    val_y = val["is_malicious"]
-    test_x = cast(pd.DataFrame, test[selected_features].fillna(0.0))
-    test_y = test["is_malicious"]
-
+    """
+    Tune a model over a grid of hyperparameters.
+    
+    Args:
+        model_factory: A callable that returns (combination_name, model) when passed
+                       the hyperparameters as kwargs (e.g., model_factory(**params)).
+        param_grids: List of parameter grids (dicts) to try.
+        
+    Returns:
+        pd.DataFrame containing the parameters and metrics for all combinations.
+    """
     results = []
-    logging.info("Starting SVC hyperparameter tuning...")
+    logging.info("Starting hyperparameter tuning...")
 
     for params in ParameterGrid(param_grids):
-        C = params["C"]
-        kernel = params["kernel"]
-        gamma = params.get("gamma", "scale")
-        class_weight = params.get("class_weight", None)
-
-        comb_name = f"SVC - {C} - {kernel} - {gamma} - {class_weight}"
-
-        logging.info(f"Training {comb_name}...")
-
-        if kernel == "linear":
-            model = LinearSVC(
-                C=C,
-                loss="hinge",
-                class_weight=class_weight,
-                random_state=42,
-                dual=True,
-                max_iter=10000,
-            )
-        else:
-            model = SVC(
-                C=C,
-                kernel=kernel,
-                gamma=gamma,
-                class_weight=class_weight,
-                random_state=42,
-            )
+        # Instantiate model and name from factory
+        comb_name, model = model_factory(**params)
+        
+        logging.info(f"Training combination: {comb_name}")
 
         model.fit(train_x, train_y)
 
@@ -70,10 +48,7 @@ def tune_svc(
 
         res_d = {
             "combination_name": comb_name,
-            "C": C,
-            "kernel": kernel,
-            "gamma": gamma,
-            "class_weight": class_weight,
+            **params,
             "val_f1_macro": val_f1,
             "val_precision_macro": val_prec,
             "val_recall_macro": val_rec,
@@ -81,43 +56,8 @@ def tune_svc(
             "test_precision_macro": test_prec,
             "test_recall_macro": test_rec,
         }
+
         results.append(res_d)
-        logging.info(f"{comb_name} - {res_d}")
+        logging.info(f"Results for {comb_name}: Val F1={val_f1:.4f}, Test F1={test_f1:.4f}")
 
-    df_results = pd.DataFrame(results).sort_values("val_f1_macro")
-    out_path = (
-        out_dir / f"svc_tune_result_{datetime.datetime.now().strftime('%H-%M')}.csv"
-    )
-    df_results.to_csv(out_path, index=False)
-    logging.info(f"Tuning finished. Results saved to {out_path}")
-
-    # Output detailed classification report on test set for the best model based on validation F1 score
-    best_result = max(results, key=lambda x: x["val_f1_macro"])
-    logging.info(
-        f"Best combination based on Validation F1: {best_result['combination_name']} (Val F1: {best_result['val_f1_macro']:.4f})"
-    )
-
-    if best_result["kernel"] == "linear":
-        best_model = LinearSVC(
-            C=cast(Any, best_result["C"]),
-            loss="hinge",
-            class_weight=cast(Any, best_result["class_weight"]),
-            random_state=42,
-            dual=True,
-            max_iter=10000,
-        )
-    else:
-        best_model = SVC(
-            C=cast(Any, best_result["C"]),
-            kernel=cast(Any, best_result["kernel"]),
-            gamma=cast(Any, best_result["gamma"]),
-            class_weight=cast(Any, best_result["class_weight"]),
-            random_state=42,
-        )
-    best_model.fit(train_x, train_y)
-    best_test_preds = best_model.predict(test_x)
-
-    report_str = cast(str, classification_report(test_y, best_test_preds))
-    logging.info("\nTest set classification report for the best model:\n" + report_str)
-
-    return df_results
+    return pd.DataFrame(results)

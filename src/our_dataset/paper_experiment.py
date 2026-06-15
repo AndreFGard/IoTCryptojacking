@@ -6,14 +6,58 @@ import os
 from functools import partial
 from typing import Any, Callable, cast, Literal
 import pandas as pd
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics import classification_report
 from joblib import Parallel, delayed
 
 from our_dataset import dataset, transforms
-from our_dataset.tuning import tune_svc
+from our_dataset.tuning import tune_model
 
 dataset_df: pd.DataFrame | None = None
+
+
+class SVCFactory:
+    def __init__(self):
+        self.param_grids = [
+            {
+                "C": [1, 2],
+                "kernel": ["linear"],
+                "gamma": ["scale"],
+                "class_weight": ["balanced", None],
+            },
+            {
+                "C": [1, 2],
+                "kernel": ["poly", "rbf", "sigmoid"],
+                "gamma": ["scale", "auto"],
+                "class_weight": ["balanced", None],
+            },
+        ]
+
+    def make_model(self, **params):
+        C = params["C"]
+        kernel = params["kernel"]
+        class_weight = params.get("class_weight", None)
+        gamma = params.get("gamma", "scale")
+        comb_name = f"SVC - {C} - {kernel} - {gamma} - {class_weight}"
+
+        if kernel == "linear":
+            model = LinearSVC(
+                C=C,
+                loss="hinge",
+                class_weight=class_weight,
+                random_state=42,
+                dual=True,
+                max_iter=10000,
+            )
+        else:
+            model = SVC(
+                C=C,
+                kernel=kernel,
+                gamma=gamma,
+                class_weight=class_weight,
+                random_state=42,
+            )
+        return comb_name, model
 
 
 def configure_logging() -> None:
@@ -27,57 +71,14 @@ def configure_logging() -> None:
 
 
 def run_experiment(
-    name: str,
-    pipeline: Callable[[pd.DataFrame], transforms.PipelineReturn],
+    pipeline_obj: transforms.Pipeline,
     model,
     out_dir="data/ours/",
 ):
     out_dir = pathlib.Path(out_dir)
-    out_dir.mkdir(exist_ok=True, parents=True)
+    logging.info(f"starting experiment '{pipeline_obj.name}'")
 
-    required_dataset_files = [
-        out_dir / (name + suffix) for suffix in ["_train.csv", "_val.csv", "_test.csv"]
-    ]
-    features_file = out_dir / (name + "_selected_features.txt")
-
-    global dataset_df
-    logging.info(f"starting experiment '{name}")
-    if not (all(f.exists() for f in required_dataset_files) and features_file.exists()):
-        logging.info(
-            f"Artifacts not found in {out_dir}. Running pipeline to generate datasets..."
-        )
-        if dataset_df is None:
-            dataset_df = dataset.load_dataset().df
-            logging.info(f"Loaded dataset with shape: {dataset_df.shape}")
-
-        logging.info(f"Executing feature extraction pipeline '{name}'...")
-        start_time = time.time()
-        train, val, test, shit = pipeline(dataset_df)
-        elapsed = time.time() - start_time
-        logging.info(f"Pipeline execution finished in {elapsed:.2f} seconds.")
-
-        # save features name one by line
-        with open(features_file, "w") as f:
-            for feat in shit.selected_features:
-                f.write(f"{feat}\n")
-
-        logging.info(f"Saving train/val/test CSV datasets to {out_dir}...")
-        for df, file in zip([train, val, test], required_dataset_files):
-            df.to_csv(file, index=False)
-
-        selected_features = shit.selected_features
-    else:
-        logging.info(f"Loading cached dataset artifacts from {out_dir}...")
-        train, val, test = [pd.read_csv(f) for f in required_dataset_files]
-        logging.info(
-            f"Loaded cached splits: train={train.shape}, val={val.shape}, test={test.shape}"
-        )
-        with open(features_file, "r") as f:
-            selected_features = [line.strip() for line in f if line.strip()]
-        logging.info(
-            f"Loaded {len(selected_features)} selected features from {features_file}"
-        )
-
+    train, val, test, selected_features = pipeline_obj.load_cache_or_run(out_dir)
     train_x = train[selected_features].fillna(0.0)
     train_y = train["is_malicious"]
 
@@ -124,35 +125,47 @@ def main():
     ds = dataset.load_dataset()
 
     # To test with a subset, uncomment the line below:
-    # dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
-    dataset_df = ds.df
+    dataset_df = ds.df.groupby(["activity", "vpn"]).head(500).reset_index(drop=True)
+    # dataset_df = ds.df
 
-    tsfresh_fn = partial(transforms.pipeline_tsfresh, window_size=10, overlap=0)
-    pycatch22_fn = partial(
-        transforms.pipeline_pycatch22, window_size=10, overlap=0
+    pipeline_obj = transforms.PipelinePycatch22(dataset_df, window_size=10, overlap=0)
+
+    _, train, val, test, selected_features, _ = run_experiment(pipeline_obj, SVC())
+
+    factory = SVCFactory()
+
+    train_x = cast(pd.DataFrame, train[selected_features].fillna(0.0))
+    train_y = train["is_malicious"]
+    val_x = val[selected_features].fillna(0.0)
+    val_y = val["is_malicious"]
+    test_x = test[selected_features].fillna(0.0)
+    test_y = test["is_malicious"]
+
+    df_results = tune_model(
+        factory.make_model,
+        factory.param_grids,
+        train_x,
+        train_y,
+        val_x,
+        val_y,
+        test_x,
+        test_y,
     )
 
-    _, train, val, test, selected_features, _ = run_experiment(
-        "pycatch22", pycatch22_fn, SVC()
+    df_results = df_results.sort_values("val_f1_macro")
+
+    out_dir = pathlib.Path("data/ours/")
+    out_dir.mkdir(exist_ok=True, parents=True)
+    out_path = (
+        out_dir / f"svc_tune_result_{datetime.datetime.now().strftime('%d-%m-%y_%H:%M')}.csv"
     )
+    df_results.to_csv(out_path, index=False)
+    logging.info(f"Tuning finished. Results saved to {out_path}")
 
-    param_grids = [
-        {
-            "C": [1, 2],
-            "kernel": ["linear"],
-            "gamma": ["scale"],
-            "class_weight": ["balanced", None],
-        },
-        {
-            "C": [1, 2],
-            "kernel": ["poly", "rbf", "sigmoid"],
-            "gamma": ["scale", "auto"],
-            "class_weight": ["balanced", None],
-        },
-    ]
-
-    # Run hyperparameter tuning on the dataset splits
-    tune_svc(train, val, test, selected_features, param_grids=param_grids)
+    best_row = df_results.iloc[-1]
+    logging.info(
+        f"Best combination based on Validation F1: {best_row['combination_name']} (Val F1: {best_row['val_f1_macro']:.4f})"
+    )
 
     logging.info("All experiments finished.")
 

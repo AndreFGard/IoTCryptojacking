@@ -6,7 +6,8 @@ def main():
     ds = dataset.load_dataset()
     print("finished loading \nstarting extraction")
     
-    train, val, test, _ = transforms.pipeline_pycatch22(ds.df, 15, 0)
+    pipeline_obj = transforms.PipelinePycatch22(ds.df, window_size=15, overlap=0)
+    train, val, test, _ = pipeline_obj.run_pipeline()
     print(train.columns)
     print(train["is_malicious"].describe())
 
